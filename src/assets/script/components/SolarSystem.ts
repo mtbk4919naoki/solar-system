@@ -46,7 +46,7 @@ export default class SolarSystem {
     this.fog = new THREE.Fog(0x000000, 0.1, 2000);
     this.scene.fog = this.fog;
 
-    const earthTexture = new THREE.TextureLoader().load('public/textures/earth.jpg');
+    const earthTexture = new THREE.TextureLoader().load('textures/earth.jpg');
 
     this.geometry = new THREE.SphereGeometry(50,50,50);
     this.material = new THREE.MeshPhongMaterial({ color: 0xffffff });
@@ -69,7 +69,7 @@ export default class SolarSystem {
       geometry: new THREE.SphereGeometry(10,10,10),
       material: new THREE.MeshPhongMaterial({ color: 0xffee99 }),
     }
-    const moonTexture = new THREE.TextureLoader().load('public/textures/moon.jpg');
+    const moonTexture = new THREE.TextureLoader().load('textures/moon.jpg');
     this.moon.material.map = moonTexture;
     this.moon.mesh = new THREE.Mesh(this.moon.geometry, this.moon.material);
     this.moon.mesh.position.set(100, 0, 0);
@@ -77,7 +77,7 @@ export default class SolarSystem {
 
     
 
-    const sunTexture = new THREE.TextureLoader().load('public/textures/sun.jpg');
+    const sunTexture = new THREE.TextureLoader().load('textures/sun.jpg');
     const sunGeometry = new THREE.SphereGeometry(200,200,200);
     const sunMaterial = new THREE.MeshBasicMaterial({
       map: sunTexture,
@@ -145,7 +145,7 @@ export default class SolarSystem {
       transparent: true,
       side: THREE.BackSide
     });
-    const backgroundTexture = new THREE.TextureLoader().load('public/textures/space.jpg');
+    const backgroundTexture = new THREE.TextureLoader().load('textures/space.jpg');
     backgroundMaterial.map = backgroundTexture;
     const background = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
     this.scene.add(background);
