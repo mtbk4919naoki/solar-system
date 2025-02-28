@@ -91,6 +91,11 @@ export default class SolarSystem {
       if ( /\d/.test(event.key)) {
         this.cameraMode = parseInt(event.key);
       }
+
+      if (this.cameraMode === 0) {
+        this.camera.position.set(0, 2000, 4000);
+        this.camera.lookAt(0, 0, 0);
+      }
     });
   }
 
@@ -281,7 +286,7 @@ export default class SolarSystem {
    */
   addStars() {
     const starsGeometry = new THREE.BufferGeometry();
-    const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff });
+    const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 3 });
     
     const starVertices = [];
     for (let i = 1000; i > 0; i--) {
