@@ -38,7 +38,7 @@ export default class SolarSystem {
     this.container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 0.1, 2000);
+    this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 100, 4000);
     this.camera.position.set(500, 500, 0);
     this.camera.lookAt(0, 0, 0);
     this.scene.add(this.camera);
@@ -110,13 +110,19 @@ export default class SolarSystem {
     }, false);
 
     this.addStars();
+    this.addBackground();
 
     this.render();
   }
 
   private addStars() {
     const starGeometry = new THREE.BufferGeometry();
-    const starMaterial = new THREE.PointsMaterial({color: 0xffffff});
+    const starMaterial = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.1,
+      transparent: true,
+      opacity: 0.8,
+    });
 
     const starVertices = [];
     for (let i = 0; i < 1000; i++) {
@@ -129,6 +135,20 @@ export default class SolarSystem {
     starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
     const stars = new THREE.Points(starGeometry, starMaterial);
     this.scene.add(stars);
+  }
+
+  private addBackground() {
+    const backgroundGeometry = new THREE.SphereGeometry(2000, 2000, 2000);
+    const backgroundMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      opacity: 0.5,
+      transparent: true,
+      side: THREE.BackSide
+    });
+    const backgroundTexture = new THREE.TextureLoader().load('public/textures/space.jpg');
+    backgroundMaterial.map = backgroundTexture;
+    const background = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
+    this.scene.add(background);
   }
 
   render() {
