@@ -214,7 +214,7 @@ export default class SolarSystem {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
     this.scene.add(ambientLight);
 
-    const pointLight = new THREE.PointLight(0xffffff, 10, 32000, 0.10);
+    const pointLight = new THREE.PointLight(0xffffff, 10, 36000, 0.10);
     pointLight.position.set(0, 0, 0);
     pointLight.castShadow = true;
 
@@ -228,7 +228,7 @@ export default class SolarSystem {
    * @returns カメラ
    */
   addCamera() {
-    this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 100, 32000);
+    this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 100, 36000);
     this.switchCameraMode(0);
     this.scene.add(this.camera);
 
@@ -278,7 +278,7 @@ export default class SolarSystem {
    * フォグを追加
    */
   addFog() {
-    this.scene.fog = new THREE.Fog(0x000000, 3200, 32000);
+    this.scene.fog = new THREE.Fog(0x000000, 3600, 36000);
   }
 
   /**
@@ -474,10 +474,10 @@ export default class SolarSystem {
     const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 3 });
     
     const starVertices = [];
-    for (let i = 10000; i > 0; i--) {
-      const x = THREE.MathUtils.randFloatSpread(32000);
-      const y = THREE.MathUtils.randFloatSpread(32000);
-      const z = THREE.MathUtils.randFloatSpread(32000);
+    for (let i = 8000; i > 0; i--) {
+      const x = THREE.MathUtils.randFloatSpread(36000);
+      const y = THREE.MathUtils.randFloatSpread(36000);
+      const z = THREE.MathUtils.randFloatSpread(36000);
       starVertices.push(x, y, z);
     }
 
@@ -493,7 +493,7 @@ export default class SolarSystem {
    * @returns 背景球体
    */
   addBackgroundSphere() {
-    const backgroundSphereGeometry = new THREE.SphereGeometry(32000);
+    const backgroundSphereGeometry = new THREE.SphereGeometry(36000);
     // // ShaderMaterialを使用しない場合
     // const backgroundSphereMaterial = new THREE.MeshBasicMaterial({
     //   color: 0x444444,
@@ -540,7 +540,7 @@ export default class SolarSystem {
    * @returns ヘルパー
    */
   addHelper() {
-    const axisHelper = new THREE.AxesHelper(32000);
+    const axisHelper = new THREE.AxesHelper(36000);
     const pointLightHelper = new THREE.PointLightHelper(this.lights.pointLight, 500);
 
     axisHelper.visible = false;
@@ -606,7 +606,7 @@ export default class SolarSystem {
       this.controls.enabled = true;
 
       // カメラのパンを制限
-      const maxDistance = 32000;
+      const maxDistance = 36000;
       const distanceFromOrigin = this.camera.position.length();
 
       if(distanceFromOrigin > maxDistance) {
