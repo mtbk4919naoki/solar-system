@@ -20,12 +20,14 @@ export default class SolarSystem {
     axisHelper: THREE.AxesHelper;
     pointLightHelper: THREE.PointLightHelper;
   };
+  private orbitCurves: THREE.Line[];
   private planets: PlanetaryObject<THREE.SphereGeometry, THREE.MeshBasicMaterial|THREE.MeshPhongMaterial>[];
   private backgroundSphere: THREE.Mesh;
   private currentPlanet: PlanetaryObject<THREE.SphereGeometry, THREE.MeshBasicMaterial|THREE.MeshPhongMaterial> | null;
   private pause: boolean;
   private keyDownX: boolean;
   private keyDownC: boolean;
+  private keyDownV: boolean;
   private frame: number;
 
   constructor(container: HTMLElement, indicator: HTMLElement) {
@@ -51,10 +53,14 @@ export default class SolarSystem {
     this.pause = false;
     this.keyDownX = false;
     this.keyDownC = false;
+    this.keyDownV = false;
     this.planets = [];
     this.frame = 0;
 
     this.lights = this.addLight();
+
+    this.helpers = this.addHelper()
+    this.orbitCurves = [];
 
     this.addSun();
     this.addMercury();
@@ -68,8 +74,6 @@ export default class SolarSystem {
     
     this.addStars();
     this.addFog();
-
-    this.helpers = this.addHelper();
 
     this.render();
 
@@ -95,6 +99,7 @@ export default class SolarSystem {
         event.preventDefault();
         this.helpers.axisHelper.visible = !this.helpers.axisHelper.visible;
         this.helpers.pointLightHelper.visible = !this.helpers.pointLightHelper.visible;
+        this.orbitCurves.forEach(orbit => orbit.visible = !orbit.visible);
       }
 
       // Xキーを押したら10倍速モード  
@@ -107,6 +112,12 @@ export default class SolarSystem {
       if (event.key === 'c') {
         event.preventDefault(); 
         this.keyDownC = true;
+      }
+      
+      // Vーを押したら1000倍速モード
+      if (event.key === 'v') {
+        event.preventDefault(); 
+        this.keyDownV = true;
       }
 
       // 左キーでカメラモードを切り替え
@@ -139,6 +150,12 @@ export default class SolarSystem {
       if (event.key === 'c') {
         event.preventDefault();
         this.keyDownC = false;
+      }
+
+      // Vキーを離したら1000倍速モードを解除
+      if (event.key === 'v') {
+        event.preventDefault();
+        this.keyDownV = false;
       }
     });
 
@@ -300,6 +317,9 @@ export default class SolarSystem {
     mercury.setName('水星（Mercury）');
     this.planets.push(mercury);
     this.scene.add(mercury.group);
+
+    // 軌道を追加
+    this.addOrbit(387.0);
   }
 
   /**
@@ -314,6 +334,9 @@ export default class SolarSystem {
     venus.setAxisTilt(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(177.36));
     this.planets.push(venus);
     this.scene.add(venus.group);
+
+    // 軌道を追加
+    this.addOrbit(723.3);
   }
 
   /**
@@ -335,6 +358,9 @@ export default class SolarSystem {
 
     this.planets.push(earth);
     this.scene.add(earth.group);
+
+    // 軌道を追加
+    this.addOrbit(1000);
   }
 
   /**
@@ -349,6 +375,9 @@ export default class SolarSystem {
     mars.setName('火星（Mars）');
     this.planets.push(mars);
     this.scene.add(mars.group);
+
+    // 軌道を追加
+    this.addOrbit(1523.7);
   }
 
   /**
@@ -363,6 +392,9 @@ export default class SolarSystem {
     jupiter.setName('木星（Jupiter）');
     this.planets.push(jupiter);
     this.scene.add(jupiter.group);
+
+    // 軌道を追加
+    this.addOrbit(5203);
   }
 
   /**
@@ -386,6 +418,9 @@ export default class SolarSystem {
 
     this.planets.push(saturn);
     this.scene.add(saturn.group);
+
+    // 軌道を追加
+    this.addOrbit(9538.8);
   }
 
   /**
@@ -409,6 +444,9 @@ export default class SolarSystem {
 
     this.planets.push(uranus);
     this.scene.add(uranus.group);
+
+    // 軌道を追加
+    this.addOrbit(19191.4);
   }
 
   /** 
@@ -423,6 +461,9 @@ export default class SolarSystem {
     neptune.setName('海王星（Neptune）');
     this.planets.push(neptune);
     this.scene.add(neptune.group);
+
+    // 軌道を追加
+    this.addOrbit(30061.1);
   }
 
   /**
@@ -500,7 +541,7 @@ export default class SolarSystem {
    */
   addHelper() {
     const axisHelper = new THREE.AxesHelper(10000);
-    const pointLightHelper = new THREE.PointLightHelper(this.lights.pointLight, 600);
+    const pointLightHelper = new THREE.PointLightHelper(this.lights.pointLight, 500);
 
     axisHelper.visible = false;
     pointLightHelper.visible = false;
@@ -512,12 +553,42 @@ export default class SolarSystem {
   }
 
   /**
+   * 軌道を追加
+   * @param radius 軌道の半径
+   * @returns 軌道の線
+   */
+  addOrbit(radius: number) {
+    const curve = new THREE.EllipseCurve(
+      0, 0,            // ax, aY
+      radius, radius,  // xRadius, yRadius
+      0, 2 * Math.PI,  // aStartAngle, aEndAngle
+      false,           // aClockwise
+      0                // aRotation
+    );
+
+    const points = curve.getPoints(100);
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+    const material = new THREE.LineBasicMaterial({ color: 0xffffff });
+    const orbit = new THREE.Line(geometry, material);
+
+    orbit.rotation.x = Math.PI / 2; // 軌道を水平にする
+    orbit.visible = false;
+
+    this.scene.add(orbit);
+
+    this.orbitCurves.push(orbit);
+
+    return orbit;
+  }
+
+  /**
    * レンダリング
    */
   render() {
     requestAnimationFrame(() => this.render());
 
-    const speed = this.keyDownC ? 100 : this.keyDownX ? 10 : 1;
+    const speed = this.keyDownV ? 1000 : this.keyDownC ? 100 : this.keyDownX ? 10 : 1;
 
     if(!this.pause){
       this.frame += speed;
