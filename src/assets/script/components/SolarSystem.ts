@@ -245,6 +245,9 @@ export default class SolarSystem {
       this.currentPlanet = null;
       this.camera.position.set(-1000, 1000, 1000);
       this.camera.lookAt(0, 0, 0);
+      if(this.controls) {
+        this.controls.target.set(0, 0, 0);
+      }
       this.updateIndicator('太陽系（Solar System）');
     } else {
       this.currentPlanet = this.planets[number - 1];
@@ -622,7 +625,7 @@ export default class SolarSystem {
       const cameraPosition = targetPosition.clone();
       const targetSize = this.planets[this.cameraMode - 1].mesh.geometry.parameters.radius;
       
-      // カメラの位置と向きを線形補完で更新
+      // // カメラの位置と向きを線形補完で更新
       cameraPosition.x += targetSize * 2 + 100;  
       cameraPosition.y += targetSize * 2 + 100;  
       cameraPosition.z += targetSize * 2 + 100;
