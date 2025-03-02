@@ -279,7 +279,7 @@ export default class SolarSystem {
    */
   addSun() {
     const sun = new PlanetaryObject(new THREE.SphereGeometry(500), new THREE.MeshBasicMaterial({ color: 0xffee00 }));
-    sun.setRotation(0.005, new THREE.Vector3(0, 1, 0));
+    sun.setRotation(0.00563, new THREE.Vector3(0, 1, 0));
     sun.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(7.25));
     sun.setTexture('textures/sun.jpg');
     sun.setName('太陽（Sun）');
@@ -294,8 +294,8 @@ export default class SolarSystem {
    */
   addMercury() {
     const mercury = new PlanetaryObject(new THREE.SphereGeometry(30), new THREE.MeshPhongMaterial({ color: 0xffffff }));
-    mercury.setRotation(0.1, new THREE.Vector3(0, 1, 0));
-    mercury.setRevolution(0.064, 1000);
+    mercury.setRotation(0.0192, new THREE.Vector3(0, 1, 0));
+    mercury.setRevolution(0.0128, 1000);
     mercury.setTexture('textures/mercury.jpg');
     mercury.setName('水星（Mercury）');
     this.planets.push(mercury);
@@ -307,10 +307,11 @@ export default class SolarSystem {
    */
   addVenus() {
     const venus = new PlanetaryObject(new THREE.SphereGeometry(50), new THREE.MeshPhongMaterial({ color: 0xffffff }));
-    venus.setRotation(0.1, new THREE.Vector3(0, 1, 0));
-    venus.setRevolution(0.032, 1200);
+    venus.setRotation(-0.00593, new THREE.Vector3(0, 1, 0));
+    venus.setRevolution(0.0064, 1200);
     venus.setTexture('textures/venus.jpg');
     venus.setName('金星（Venus）');
+    venus.setAxisTilt(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(177.36));
     this.planets.push(venus);
     this.scene.add(venus.group);
   }
@@ -320,14 +321,15 @@ export default class SolarSystem {
    */
   addEarth() {
     const earth = new PlanetaryObject(new THREE.SphereGeometry(50), new THREE.MeshPhongMaterial({ color: 0xcceeff }));
-    earth.setRotation(0.1, new THREE.Vector3(0, 1, 0));
-    earth.setRevolution(0.016, 1400, new THREE.Vector3(0, 1, 0));
+    earth.setRotation(0.152, new THREE.Vector3(0, 1, 0));
+    earth.setRevolution(0.0032, 1400, new THREE.Vector3(0, 1, 0));
     earth.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(23.5));
     earth.setTexture('textures/earth.jpg');
     earth.setName('地球（Earth）');
+
     const moon = new PlanetaryObject(new THREE.SphereGeometry(15), new THREE.MeshPhongMaterial({ color: 0xffffcc }));
-    moon.setRotation(0.1, new THREE.Vector3(0, 1, 0));
-    moon.setRevolution(0.1, 100, new THREE.Vector3(0, 1, 0));
+    moon.setRotation(0.1336, new THREE.Vector3(0, 1, 0));
+    moon.setRevolution(0.152, 100, new THREE.Vector3(0, 1, 0));
     moon.setTexture('textures/moon.jpg');
     earth.addSatellite(moon);
 
@@ -340,8 +342,9 @@ export default class SolarSystem {
    */
   addMars() {
     const mars = new PlanetaryObject(new THREE.SphereGeometry(40), new THREE.MeshPhongMaterial({ color: 0xff9933 }));
-    mars.setRotation(0.1, new THREE.Vector3(0, 1, 0));
-    mars.setRevolution(0.008, 1600);
+    mars.setRotation(0.152, new THREE.Vector3(0, 1, 0));
+    mars.setRevolution(0.0016, 1600);
+    mars.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(25.19));
     mars.setTexture('textures/mars.jpg');
     mars.setName('火星（Mars）');
     this.planets.push(mars);
@@ -353,8 +356,8 @@ export default class SolarSystem {
    */
   addJupiter() {
     const jupiter = new PlanetaryObject(new THREE.SphereGeometry(300), new THREE.MeshPhongMaterial({ color: 0xffffff }));
-    jupiter.setRotation(0.01, new THREE.Vector3(0, 1, 0));
-    jupiter.setRevolution(0.004, 2000);
+    jupiter.setRotation(0.3648, new THREE.Vector3(0, 1, 0));
+    jupiter.setRevolution(0.0008, 2000);
     jupiter.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(3.1));
     jupiter.setTexture('textures/jupiter.jpg');
     jupiter.setName('木星（Jupiter）');
@@ -367,11 +370,12 @@ export default class SolarSystem {
    */
   addSaturn() {
     const saturn = new PlanetaryObject(new THREE.SphereGeometry(140), new THREE.MeshPhongMaterial({ color: 0xffeedd }));
-    saturn.setRotation(0.01, new THREE.Vector3(0, 1, 0));
-    saturn.setRevolution(0.002, 3000);
+    saturn.setRotation(0.3648, new THREE.Vector3(0, 1, 0));
+    saturn.setRevolution(0.0004, 3000);
     saturn.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(26.7));
     saturn.setTexture('textures/saturn.jpg');
     saturn.setName('土星（Saturn）');
+
     const ring = new PlanetaryObject(new THREE.TorusGeometry(200, 30), new THREE.MeshPhongMaterial({ color: 0xcc9966, opacity: 0.7, transparent: true }));
     ring.mesh.scale.set(1,1,0.1);
     ring.setRotation(0.01, new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(5.0)), 0, Math.cos(THREE.MathUtils.degToRad(5.0))));
@@ -389,15 +393,16 @@ export default class SolarSystem {
    */
   addUranus() {
     const uranus = new PlanetaryObject(new THREE.SphereGeometry(100), new THREE.MeshPhongMaterial({ color: 0x88ddff }));
-    uranus.setRotation(0.01, new THREE.Vector3(0, 1, 0));
-    uranus.setRevolution(0.001,4000);
+    uranus.setRotation(0.20267, new THREE.Vector3(0, 1, 0));
+    uranus.setRevolution(0.0002,4000);
     uranus.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(98));
     uranus.setTexture('textures/uranus.jpg');
     uranus.setName('天王星（Uranus）');
-    const ring = new PlanetaryObject(new THREE.TorusGeometry(150, 20), new THREE.MeshPhongMaterial({ color: 0x88ddff, opacity: 0.7, transparent: true }));
+
+    const ring = new PlanetaryObject(new THREE.TorusGeometry(150, 20), new THREE.MeshPhongMaterial({ color: 0xeeddee, opacity: 0.7, transparent: true }));
     ring.mesh.scale.set(1,1,0.1);
     ring.setRotation(0.01, new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(-5.0)), 0, Math.cos(THREE.MathUtils.degToRad(-5.0))));
-    ring.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(90));
+    ring.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(0));
     ring.setTexture('textures/uranus.jpg');
 
     uranus.addSatellite(ring);
@@ -411,8 +416,8 @@ export default class SolarSystem {
    */
   addNeptune() {
     const neptune = new PlanetaryObject(new THREE.SphereGeometry(90), new THREE.MeshPhongMaterial({ color: 0x0000ff }));
-    neptune.setRotation(0.01, new THREE.Vector3(0, 1, 0));
-    neptune.setRevolution(0.0005, 5000);
+    neptune.setRotation(0.228, new THREE.Vector3(0, 1, 0));
+    neptune.setRevolution(0.0001, 5000);
     neptune.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(28.3));
     neptune.setTexture('textures/neptune.jpg');
     neptune.setName('海王星（Neptune）');
