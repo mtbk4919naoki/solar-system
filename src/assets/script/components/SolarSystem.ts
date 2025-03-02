@@ -218,7 +218,7 @@ export default class SolarSystem {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
     this.scene.add(ambientLight);
 
-    const pointLight = new THREE.PointLight(0xffffff, 10, 36000, 0.10);
+    const pointLight = new THREE.PointLight(0xffffff, 10, this.filterRevolutionSize(36000), 0.10);
     pointLight.position.set(0, 0, 0);
     pointLight.castShadow = true;
 
@@ -232,7 +232,7 @@ export default class SolarSystem {
    * @returns カメラ
    */
   addCamera() {
-    this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 10, 36000);
+    this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 10, this.filterRevolutionSize(36000));
     this.switchCameraMode(0);
     this.scene.add(this.camera);
 
@@ -247,7 +247,7 @@ export default class SolarSystem {
     
     if (this.cameraMode === 0) {
       this.currentPlanet = null;
-      this.camera.position.set(-800, 800, 800);
+      this.camera.position.set(-500, 250, 500);
       this.camera.lookAt(0, 0, 0);
       if(this.controls) {
         this.controls.target.set(0, 0, 0);
@@ -285,7 +285,7 @@ export default class SolarSystem {
    * フォグを追加
    */
   addFog() {
-    this.scene.fog = new THREE.Fog(0x000000, 3600, 36000);
+    this.scene.fog = new THREE.Fog(0x000000, this.filterRevolutionSize(3600), this.filterRevolutionSize(36000));
   }
 
   /**
@@ -516,10 +516,10 @@ export default class SolarSystem {
     const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 3 });
     
     const starVertices = [];
-    for (let i = 8000; i > 0; i--) {
-      const x = THREE.MathUtils.randFloatSpread(36000);
-      const y = THREE.MathUtils.randFloatSpread(36000);
-      const z = THREE.MathUtils.randFloatSpread(36000);
+    for (let i = this.filterRevolutionSize(8000); i > 0; i--) {
+      const x = THREE.MathUtils.randFloatSpread(this.filterRevolutionSize(36000));
+      const y = THREE.MathUtils.randFloatSpread(this.filterRevolutionSize(36000));
+      const z = THREE.MathUtils.randFloatSpread(this.filterRevolutionSize(36000));
       starVertices.push(x, y, z);
     }
 
@@ -535,7 +535,7 @@ export default class SolarSystem {
    * @returns 背景球体
    */
   addBackgroundSphere() {
-    const backgroundSphereGeometry = new THREE.SphereGeometry(36000);
+    const backgroundSphereGeometry = new THREE.SphereGeometry(this.filterRevolutionSize(36000));
     // // ShaderMaterialを使用しない場合
     // const backgroundSphereMaterial = new THREE.MeshBasicMaterial({
     //   color: 0x444444,
@@ -582,7 +582,7 @@ export default class SolarSystem {
    * @returns ヘルパー
    */
   addHelper() {
-    const axisHelper = new THREE.AxesHelper(36000);
+    const axisHelper = new THREE.AxesHelper(this.filterRevolutionSize(36000));
     const pointLightHelper = new THREE.PointLightHelper(this.lights.pointLight, this.filterPlanetSize(6960 * 2, 'sun'));
 
     axisHelper.visible = false;
@@ -665,9 +665,9 @@ export default class SolarSystem {
       const targetSize = targetPlanet.mesh.geometry.parameters.radius;
       
       // // カメラの位置と向きを線形補完で更新
-      cameraPosition.x += targetSize * 5 + 10;  
-      cameraPosition.y += targetSize * 5 + 10;  
-      cameraPosition.z += targetSize * 5 + 10;
+      cameraPosition.x += targetSize * 4.5 + 10;  
+      cameraPosition.y += targetSize * 4.5 + 10;  
+      cameraPosition.z += targetSize * 4.5 + 10;
 
       // 水星は早いので補完を早くする
       let lerp = 0.15;
