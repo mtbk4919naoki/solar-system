@@ -540,7 +540,7 @@ export default class SolarSystem {
    * @returns ヘルパー
    */
   addHelper() {
-    const axisHelper = new THREE.AxesHelper(10000);
+    const axisHelper = new THREE.AxesHelper(32000);
     const pointLightHelper = new THREE.PointLightHelper(this.lights.pointLight, 500);
 
     axisHelper.visible = false;
