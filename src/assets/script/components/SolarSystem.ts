@@ -519,7 +519,7 @@ export default class SolarSystem {
   
       // 惑星（衛星）の更新
       this.planets.forEach(planet => {
-        planet.update(this.frame);
+        planet.update(this.frame, speed);
       });
     }
 

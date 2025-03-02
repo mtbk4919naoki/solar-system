@@ -101,10 +101,10 @@ export default class PlanetaryObject<T extends THREE.BufferGeometry, U extends T
    * 更新
    * @param deltaTime デルタタイム
    */
-  public update(deltaTime: number) {
+  public update(deltaTime: number, speed: number = 1) {
     // 自転
     if (this.rotation.speed !== 0) {
-      this.mesh.rotateOnAxis(this.rotation.axis, this.rotation.speed);
+      this.mesh.rotateOnAxis(this.rotation.axis, this.rotation.speed * speed);
     }
     // 公転
     if (this.revolution.speed !== 0) {
