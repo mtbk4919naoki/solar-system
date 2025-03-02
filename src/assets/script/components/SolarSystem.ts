@@ -550,7 +550,6 @@ export default class SolarSystem {
       const targetPosition = this.planets[this.cameraMode - 1].group.position;
       const cameraPosition = targetPosition.clone();
       const targetSize = this.planets[this.cameraMode - 1].mesh.geometry.parameters.radius;
-      console.log(targetSize);
       
       // カメラの位置と向きを線形補完で更新
       cameraPosition.x += targetSize * 2 + 100;  
