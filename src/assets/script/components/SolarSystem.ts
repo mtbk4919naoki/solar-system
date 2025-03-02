@@ -474,10 +474,10 @@ export default class SolarSystem {
     const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 3 });
     
     const starVertices = [];
-    for (let i = 1000; i > 0; i--) {
-      const x = THREE.MathUtils.randFloatSpread(10000);
-      const y = THREE.MathUtils.randFloatSpread(10000);
-      const z = THREE.MathUtils.randFloatSpread(10000);
+    for (let i = 10000; i > 0; i--) {
+      const x = THREE.MathUtils.randFloatSpread(32000);
+      const y = THREE.MathUtils.randFloatSpread(32000);
+      const z = THREE.MathUtils.randFloatSpread(32000);
       starVertices.push(x, y, z);
     }
 
