@@ -9,6 +9,7 @@ export default class SolarSystem {
   private renderer: THREE.WebGLRenderer;
   private controls: OrbitControls;
   private container: HTMLElement;
+  private indicator: HTMLElement;
   private width: number;
   private height: number;
   private lights: {
@@ -21,10 +22,15 @@ export default class SolarSystem {
   };
   private planets: PlanetaryObject<THREE.SphereGeometry, THREE.MeshBasicMaterial|THREE.MeshPhongMaterial>[];
   private backgroundSphere: THREE.Mesh;
+  private currentPlanet: PlanetaryObject<THREE.SphereGeometry, THREE.MeshBasicMaterial|THREE.MeshPhongMaterial> | null;
+  private pause: boolean;
+  private keyDownX: boolean;
+  private keyDownC: boolean;
   private frame: number;
 
-  constructor(container: HTMLElement) {
+  constructor(container: HTMLElement, indicator: HTMLElement) {
     this.container = container;
+    this.indicator = indicator;
     this.width = this.container.offsetWidth;
     this.height = this.container.offsetHeight;
 
@@ -41,7 +47,10 @@ export default class SolarSystem {
     this.cameraMode = 0;
     this.controls = this.addControls();
     this.backgroundSphere = this.addBackgroundSphere();
-
+    this.currentPlanet = null;
+    this.pause = false;
+    this.keyDownX = false;
+    this.keyDownC = false;
     this.planets = [];
     this.frame = 0;
 
@@ -75,25 +84,109 @@ export default class SolarSystem {
 
     // キーを押したときの処理
     window.addEventListener('keydown', (event) => {
-      // Zでヘルパーの表示を切り替え
+      // スペースキーで一時停止
+      if (event.key == ' ') {
+        event.preventDefault();
+        this.togglePause();
+      }
+
+      // Zキーを押したらヘルパーの表示を切り替え
       if (event.key === 'z') {
         event.preventDefault();
         this.helpers.axisHelper.visible = !this.helpers.axisHelper.visible;
         this.helpers.pointLightHelper.visible = !this.helpers.pointLightHelper.visible;
       }
 
-      // スペースキーでカメラモードを切り替え
-      if (event.key == ' ') {
+      // Xキーを押したら10倍速モード  
+      if (event.key === 'x') {
         event.preventDefault();
-        this.switchCameraMode((this.cameraMode + 1) % 10)
+        this.keyDownX = true; 
+      }
+      
+      // Cキーを押したら100倍速モード
+      if (event.key === 'c') {
+        event.preventDefault(); 
+        this.keyDownC = true;
       }
 
+      // 左キーでカメラモードを切り替え
+      if (event.key == 'ArrowLeft') {
+        event.preventDefault();
+        this.prevCameraMode();
+      }
+
+      // 右キーでカメラモードを切り替え
+      if (event.key == 'ArrowRight') {
+        event.preventDefault();
+        this.nextCameraMode();
+      }
+      
       // 数字キーでカメラモードを切り替え
       if ( /\d/.test(event.key) ) {
         event.preventDefault();
         this.switchCameraMode(parseInt(event.key));
       }
     });
+
+    window.addEventListener('keyup', (event) => {
+      // Xキーを離したら10倍速モードを解除
+      if (event.key === 'x') {
+        event.preventDefault();
+        this.keyDownX = false;
+      }
+
+      // Cキーを離したら100倍速モードを解除
+      if (event.key === 'c') {
+        event.preventDefault();
+        this.keyDownC = false;
+      }
+    });
+
+    // // レイキャスターとマウスベクトルの初期化
+    // const raycaster = new THREE.Raycaster();
+    // const mouse = new THREE.Vector2();
+
+    // window.addEventListener('click', (event) => {
+    //   event.preventDefault();
+
+    //   // マウス位置を取得
+    //   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    //   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    //   // レイキャストを設定
+    //   raycaster.setFromCamera(mouse, this.camera);
+
+    //   // 惑星オブジェクトとの交差をチェック
+    //   const planetMeshes = this.planets.map(planet => planet.mesh);
+
+    //   // スケールを一時的に拡大
+    //   planetMeshes.forEach(mesh => mesh.scale.multiplyScalar(3.5));
+
+    //   const intersects = raycaster.intersectObjects(planetMeshes, true);
+
+    //   // スケールを元に戻す
+    //   planetMeshes.forEach(mesh => mesh.scale.multiplyScalar(1 / 3.5));
+
+    //   if (intersects.length > 0) {
+    //     // 惑星がタップされた場合、カメラモードを切り替える
+    //     if (this.currentPlanet?.mesh == intersects[0].object) {
+    //       this.switchCameraMode(0);
+    //     } else {
+    //       this.planets.forEach(planet => {
+    //         if(intersects[0].object === planet.mesh) {
+    //           this.switchCameraMode(this.planets.indexOf(planet) + 1);
+    //         }
+    //       });
+    //     }
+    //   }
+    // });
+  }
+
+  /**
+   * インジケーターを更新
+   */
+  updateIndicator(text: string) {
+    this.indicator.textContent = text;
   }
 
   /**
@@ -130,11 +223,38 @@ export default class SolarSystem {
    */
   switchCameraMode(number: number) {
     this.cameraMode = number;
-
+    
     if (this.cameraMode === 0) {
+      this.currentPlanet = null;
       this.camera.position.set(-2000, 2000, 2000);
       this.camera.lookAt(0, 0, 0);
+      this.updateIndicator('太陽系（Solar System）');
+    } else {
+      this.currentPlanet = this.planets[number - 1];
+      this.updateIndicator(`${this.currentPlanet?.name}`);
     }
+  }
+
+  /**
+   * 次のカメラモードに切り替え
+   */
+  nextCameraMode() {
+    this.switchCameraMode((this.cameraMode + 1) % 10);
+  }
+
+  /**
+   * 前のカメラモードに切り替え
+   */
+  prevCameraMode() {
+    this.switchCameraMode((this.cameraMode + 10 - 1) % 10);
+  }
+
+  /**
+   * 一時停止
+   */
+  togglePause() {
+    this.pause = !this.pause;
+    const pastText = this.indicator.textContent;
   }
 
   /**
@@ -162,6 +282,7 @@ export default class SolarSystem {
     sun.setRotation(0.005, new THREE.Vector3(0, 1, 0));
     sun.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(7.25));
     sun.setTexture('textures/sun.jpg');
+    sun.setName('太陽（Sun）');
     sun.mesh.castShadow = false;
     this.planets.push(sun);
 
@@ -176,7 +297,7 @@ export default class SolarSystem {
     mercury.setRotation(0.1, new THREE.Vector3(0, 1, 0));
     mercury.setRevolution(0.064, 1000);
     mercury.setTexture('textures/mercury.jpg');
-
+    mercury.setName('水星（Mercury）');
     this.planets.push(mercury);
     this.scene.add(mercury.group);
   }
@@ -189,7 +310,7 @@ export default class SolarSystem {
     venus.setRotation(0.1, new THREE.Vector3(0, 1, 0));
     venus.setRevolution(0.032, 1200);
     venus.setTexture('textures/venus.jpg');
-
+    venus.setName('金星（Venus）');
     this.planets.push(venus);
     this.scene.add(venus.group);
   }
@@ -203,7 +324,7 @@ export default class SolarSystem {
     earth.setRevolution(0.016, 1400, new THREE.Vector3(0, 1, 0));
     earth.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(23.5));
     earth.setTexture('textures/earth.jpg');
-
+    earth.setName('地球（Earth）');
     const moon = new PlanetaryObject(new THREE.SphereGeometry(15), new THREE.MeshPhongMaterial({ color: 0xffffcc }));
     moon.setRotation(0.1, new THREE.Vector3(0, 1, 0));
     moon.setRevolution(0.1, 100, new THREE.Vector3(0, 1, 0));
@@ -222,7 +343,7 @@ export default class SolarSystem {
     mars.setRotation(0.1, new THREE.Vector3(0, 1, 0));
     mars.setRevolution(0.008, 1600);
     mars.setTexture('textures/mars.jpg');
-
+    mars.setName('火星（Mars）');
     this.planets.push(mars);
     this.scene.add(mars.group);
   }
@@ -236,7 +357,7 @@ export default class SolarSystem {
     jupiter.setRevolution(0.004, 2000);
     jupiter.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(3.1));
     jupiter.setTexture('textures/jupiter.jpg');
-
+    jupiter.setName('木星（Jupiter）');
     this.planets.push(jupiter);
     this.scene.add(jupiter.group);
   }
@@ -250,7 +371,7 @@ export default class SolarSystem {
     saturn.setRevolution(0.002, 3000);
     saturn.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(26.7));
     saturn.setTexture('textures/saturn.jpg');
-
+    saturn.setName('土星（Saturn）');
     const ring = new PlanetaryObject(new THREE.TorusGeometry(200, 30), new THREE.MeshPhongMaterial({ color: 0xcc9966, opacity: 0.7, transparent: true }));
     ring.mesh.scale.set(1,1,0.1);
     ring.setRotation(0.01, new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(5.0)), 0, Math.cos(THREE.MathUtils.degToRad(5.0))));
@@ -272,7 +393,7 @@ export default class SolarSystem {
     uranus.setRevolution(0.001,4000);
     uranus.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(98));
     uranus.setTexture('textures/uranus.jpg');
-
+    uranus.setName('天王星（Uranus）');
     const ring = new PlanetaryObject(new THREE.TorusGeometry(150, 20), new THREE.MeshPhongMaterial({ color: 0x88ddff, opacity: 0.7, transparent: true }));
     ring.mesh.scale.set(1,1,0.1);
     ring.setRotation(0.01, new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(-5.0)), 0, Math.cos(THREE.MathUtils.degToRad(-5.0))));
@@ -294,7 +415,7 @@ export default class SolarSystem {
     neptune.setRevolution(0.0005, 5000);
     neptune.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(28.3));
     neptune.setTexture('textures/neptune.jpg');
-
+    neptune.setName('海王星（Neptune）');
     this.planets.push(neptune);
     this.scene.add(neptune.group);
   }
@@ -374,7 +495,7 @@ export default class SolarSystem {
    */
   addHelper() {
     const axisHelper = new THREE.AxesHelper(10000);
-    const pointLightHelper = new THREE.PointLightHelper(this.lights.pointLight, 300);
+    const pointLightHelper = new THREE.PointLightHelper(this.lights.pointLight, 700);
 
     axisHelper.visible = false;
     pointLightHelper.visible = false;
@@ -391,14 +512,18 @@ export default class SolarSystem {
   render() {
     requestAnimationFrame(() => this.render());
 
-    this.frame++;
+    const speed = this.keyDownC ? 100 : this.keyDownX ? 10 : 1;
+
+    if(!this.pause){
+      this.frame += speed;
+  
+      // 惑星（衛星）の更新
+      this.planets.forEach(planet => {
+        planet.update(this.frame);
+      });
+    }
 
     this.backgroundSphere.position.copy(this.camera.position);
-
-    // 惑星（衛星）の更新
-    this.planets.forEach(planet => {
-      planet.update(this.frame);
-    });
 
     if(this.cameraMode === 0) {
       this.controls.enabled = true;

@@ -22,3 +22,49 @@ img {
   width: 100%;
   height: 100%;
 }
+
+.control-panel {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .control-panel__button {
+    margin-right: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    background-color: #000;
+    color: #fff;
+  }
+}
+
+.descreption-panel {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+
+  .descreption-panel__text {
+    color: #fff;
+    font-size: 12px;
+  }
+}
+
+.indicator {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .indicator__text {
+    color: #fff;
+    font-size: 12px;
+    text-align: center;
+  }
+}

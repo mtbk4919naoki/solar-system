@@ -4,6 +4,7 @@ import * as THREE from 'three';
  * 天体のモデルやメッシュを管理するクラス
  */
 export default class PlanetaryObject<T extends THREE.BufferGeometry, U extends THREE.Material & { map?: THREE.Texture | null }> {
+  public name: string;
   public mesh: THREE.Mesh;
   public group: THREE.Group;
   private geometry: T;
@@ -20,6 +21,7 @@ export default class PlanetaryObject<T extends THREE.BufferGeometry, U extends T
   private satellites: PlanetaryObject<THREE.BufferGeometry, THREE.Material & { map?: THREE.Texture | null }>[] = [];
 
   constructor(geometry: T, material: U) {
+    this.name = '';
     this.geometry = geometry;
     this.material = material;
     this.mesh = new THREE.Mesh(this.geometry, this.material);
@@ -89,6 +91,10 @@ export default class PlanetaryObject<T extends THREE.BufferGeometry, U extends T
   public addSatellite(satellite: PlanetaryObject<THREE.BufferGeometry, THREE.Material & { map?: THREE.Texture | null }>) {
     this.group.add(satellite.group);
     this.satellites.push(satellite);
+  }
+
+  public setName(name: string) {
+    this.name = name;
   }
 
   /**
