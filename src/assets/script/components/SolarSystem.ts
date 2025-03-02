@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import PlanetaryObject from './modules/PlanetaryObject';
+import clamp from '../library/clamp';
 
 export default class SolarSystem {
   private scene: THREE.Scene;
@@ -621,24 +622,35 @@ export default class SolarSystem {
 
       // カメラの位置を計算 
       const targetPlanet = this.planets[this.cameraMode - 1];
-      const targetPosition = this.planets[this.cameraMode - 1].group.position;
+      const targetPosition = targetPlanet.group.position;
       const cameraPosition = targetPosition.clone();
-      const targetSize = this.planets[this.cameraMode - 1].mesh.geometry.parameters.radius;
+      const targetSize = targetPlanet.mesh.geometry.parameters.radius;
       
       // // カメラの位置と向きを線形補完で更新
       cameraPosition.x += targetSize * 2 + 100;  
       cameraPosition.y += targetSize * 2 + 100;  
       cameraPosition.z += targetSize * 2 + 100;
-      this.camera.position.lerp(cameraPosition, 0.15);
 
+      // 水星は早いので補完を早くする
+      let lerp = 0.15;
+      if(this.cameraMode <= 2) {
+        lerp = 0.25;
+      }
+      
       const currentLookAt = new THREE.Vector3();
       this.camera.getWorldDirection(currentLookAt);
+
       const targetLookAt = targetPosition.clone().sub(this.camera.position).normalize();
-      currentLookAt.lerp(targetLookAt, 0.15);
-      this.camera.lookAt(this.camera.position.clone().add(currentLookAt));
+
+      if(this.keyDownX || this.keyDownC || this.keyDownV) {
+        this.camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+        this.camera.lookAt(targetPosition);
+      } else {
+        this.camera.position.lerp(cameraPosition, lerp);
+        this.camera.lookAt(this.camera.position.clone().add(currentLookAt.lerp(targetLookAt, lerp)));
+      }
     }
 
     this.renderer.render(this.scene, this.camera);
   }
 }
-
