@@ -1,11 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import PlanetaryObject from './modules/PlanetaryObject';
-import clamp from '../library/clamp';
-
-const PLANET_SIZE_SCALE = 0.5;
-const SUN_SIZE_SCALE = 0.05;
-
 export default class SolarSystem {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
