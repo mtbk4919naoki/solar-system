@@ -1,11 +1,16 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import PlanetaryObject from './modules/PlanetaryObject';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+
 export default class SolarSystem {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private cameraMode: number;
   private renderer: THREE.WebGLRenderer;
+  private composer: EffectComposer;
   private controls: OrbitControls;
   private container: HTMLElement;
   private indicator: HTMLElement;
@@ -35,6 +40,7 @@ export default class SolarSystem {
     this.indicator = indicator;
     this.speedIndicator = speedIndicator;
     this.helperIndicator = helperIndicator;
+    this.isHelperVisible = false;
     this.width = this.container.offsetWidth;
     this.height = this.container.offsetHeight;
 
@@ -78,6 +84,7 @@ export default class SolarSystem {
 
     this.setFrameMultiplier(1);
 
+    this.setComposer();
     this.render();
 
     // ウィンドウのリサイズ時の処理
@@ -189,14 +196,25 @@ export default class SolarSystem {
   }
 
   /**
+   * コンポーザーを設定
+   */
+  setComposer() {
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(this.width, this.height), 1.5, 1.5, 0.5));
+
+    return this.composer;
+  }
+
+  /**
    * ライトを追加
    * @returns ライト
    */
   addLight() {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
     this.scene.add(ambientLight);
 
-    const pointLight = new THREE.PointLight(0xffffff, 10, this.filterRevolutionSize(36000), 0.10);
+    const pointLight = new THREE.PointLight(0xffffff, 7, this.filterRevolutionSize(36000), 0.10);
     pointLight.position.set(0, 0, 0);
     pointLight.castShadow = true;
 
@@ -381,10 +399,10 @@ export default class SolarSystem {
    * 太陽を追加
    */
   addSun() {
-    const sun = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(6960, 'sun')), new THREE.MeshBasicMaterial({ color: 0xffee00 }));
+    const sun = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(6960, 'sun')), new THREE.MeshStandardMaterial({ color: 0xffee00 }));
     sun.setRotation(0.00563, new THREE.Vector3(0, 1, 0));
     sun.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(7.25));
-    sun.setTexture('textures/sun.jpg');
+    sun.setEmissive({ color: new THREE.Color(0xffee00), intensity: 1.5, map: 'textures/sun.jpg' });
     sun.setName('太陽（Sun）');
     sun.mesh.castShadow = false;
     this.planets.push(sun);
@@ -396,7 +414,7 @@ export default class SolarSystem {
    * 水星を追加
    */
   addMercury() {
-    const mercury = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(24.40)), new THREE.MeshPhongMaterial({ color: 0xffffff }));
+    const mercury = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(24.40)), new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.85 }));
     mercury.setRotation(0.0192, new THREE.Vector3(0, 1, 0));
     mercury.setRevolution(0.019862, this.filterRevolutionSize(387.0));
     mercury.setTexture('textures/mercury.jpg');
@@ -412,7 +430,7 @@ export default class SolarSystem {
    * 金星を追加
    */
   addVenus() {
-    const venus = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(60.52)), new THREE.MeshPhongMaterial({ color: 0xffffff }));
+    const venus = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(60.52)), new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.85 }));
     venus.setRotation(-0.00593, new THREE.Vector3(0, 1, 0));
     venus.setRevolution(0.00512, this.filterRevolutionSize(723.3));
     venus.setTexture('textures/venus.jpg');
@@ -429,7 +447,7 @@ export default class SolarSystem {
    * 地球と月を追加
    */
   addEarth() {
-    const earth = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(63.71)), new THREE.MeshPhongMaterial({ color: 0xcceeff }));
+    const earth = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(63.71)), new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.85 }));
     earth.setRotation(0.152, new THREE.Vector3(0, 1, 0));
     earth.setRevolution(0.0032, this.filterRevolutionSize(1000), new THREE.Vector3(0, 1, 0));
     earth.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(23.5));
@@ -453,7 +471,7 @@ export default class SolarSystem {
    * 火星を追加
    */
   addMars() {
-    const mars = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(33.90)), new THREE.MeshPhongMaterial({ color: 0xff9933 }));
+    const mars = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(33.90)), new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.85 }));
     mars.setRotation(0.152, new THREE.Vector3(0, 1, 0));
     mars.setRevolution(0.0017, this.filterRevolutionSize(1523.7));
     mars.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(25.19));
@@ -470,7 +488,7 @@ export default class SolarSystem {
    * 木星を追加
    */
   addJupiter() {
-    const jupiter = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(699.11)), new THREE.MeshPhongMaterial({ color: 0xffffff }));
+    const jupiter = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(699.11)), new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.85 }));
     jupiter.setRotation(0.3648, new THREE.Vector3(0, 1, 0));
     jupiter.setRevolution(0.00027, this.filterRevolutionSize(5203));
     jupiter.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(3.1));
@@ -487,7 +505,7 @@ export default class SolarSystem {
    * 土星を追加
    */
   addSaturn() {
-    const saturn = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(582.32)), new THREE.MeshPhongMaterial({ color: 0xffeedd }));
+    const saturn = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(582.32)), new THREE.MeshStandardMaterial({ color: 0xffeedd, roughness: 0.85, metalness: 0.85 }));
     saturn.setRotation(0.3648, new THREE.Vector3(0, 1, 0));
     saturn.setRevolution(0.0001086, this.filterRevolutionSize(9538.8));
     saturn.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(26.7));
@@ -513,7 +531,7 @@ export default class SolarSystem {
    * 天王星を追加
    */
   addUranus() {
-    const uranus = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(253.62)), new THREE.MeshPhongMaterial({ color: 0x88ddff }));
+    const uranus = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(253.62)), new THREE.MeshStandardMaterial({ color: 0x88ddff, roughness: 0.85, metalness: 0.85 } ));
     uranus.setRotation(0.20267, new THREE.Vector3(0, 1, 0));
     uranus.setRevolution(0.00003808, this.filterRevolutionSize(19191.4));
     uranus.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(98));
@@ -539,7 +557,7 @@ export default class SolarSystem {
    * 海王星を追加
    */
   addNeptune() {
-    const neptune = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(246.22)), new THREE.MeshPhongMaterial({ color: 0x0000ff }));
+    const neptune = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(246.22)), new THREE.MeshStandardMaterial({ color: 0x0000ff, roughness: 0.85, metalness: 0.85 }));
     neptune.setRotation(0.228, new THREE.Vector3(0, 1, 0));
     neptune.setRevolution(0.0000194, this.filterRevolutionSize(30061.1));
     neptune.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(28.3));
@@ -608,7 +626,7 @@ export default class SolarSystem {
 
         void main() {
           gl_FragColor = texture2D(uTexture, vUv);
-          gl_FragColor.a = 0.2;
+          gl_FragColor.a = 0.06;
         }
       `,
       side: THREE.BackSide,
@@ -733,6 +751,6 @@ export default class SolarSystem {
       }
     }
 
-    this.renderer.render(this.scene, this.camera);
+    this.composer.render();
   }
 }

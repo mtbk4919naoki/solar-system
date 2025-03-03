@@ -49,6 +49,21 @@ export default class PlanetaryObject<T extends THREE.BufferGeometry, U extends T
     this.material.map = texture;
   }
 
+  public setEmissive({ color, intensity, map }: { color?: THREE.Color, intensity?: number, map?: string }) {
+    if (this.material instanceof THREE.MeshStandardMaterial) {
+      if (color) {
+        this.material.emissive = color;
+      }
+      if (intensity) {
+        this.material.emissiveIntensity = intensity;
+      }
+      if (map) {
+        const texture = new THREE.TextureLoader().load(map);
+        this.material.emissiveMap = texture;
+      }
+    }
+  }
+
   /**
    * 自転
    * @param speed 自転速度
