@@ -264,7 +264,7 @@ export default class SolarSystem {
       this.frameMultiplier = multiplier;
     }
 
-    this.updateSpeedIndicator(`${this.frameMultiplier}倍速`);
+    this.updateSpeedIndicator(`${this.frameMultiplier}x`);
   }
 
   /**
