@@ -286,7 +286,6 @@ export default class SolarSystem {
    */
   togglePause() {
     this.pause = !this.pause;
-    const pastText = this.indicator.textContent;
   }
 
   /**
