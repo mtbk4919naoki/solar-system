@@ -723,10 +723,12 @@ export default class SolarSystem {
 
       const targetLookAt = targetPosition.clone().sub(this.camera.position).normalize();
 
-      if(this.keyDownX || this.keyDownC || this.keyDownV) {
+      if(this.frameMultiplier > 1) {
+        // 加速時はカメラの線形補完をしない
         this.camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
         this.camera.lookAt(targetPosition);
       } else {
+        // 減速時はカメラを線形補完
         this.camera.position.lerp(cameraPosition, lerp);
         this.camera.lookAt(this.camera.position.clone().add(currentLookAt.lerp(targetLookAt, lerp)));
       }
