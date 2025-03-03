@@ -9,6 +9,9 @@ export default class SolarSystem {
   private controls: OrbitControls;
   private container: HTMLElement;
   private indicator: HTMLElement;
+  private helperIndicator: HTMLElement;
+  private isHelperVisible: boolean;
+  private speedIndicator: HTMLElement;
   private width: number;
   private height: number;
   private lights: {
@@ -24,14 +27,14 @@ export default class SolarSystem {
   private backgroundSphere: THREE.Mesh;
   private currentPlanet: PlanetaryObject<THREE.SphereGeometry, THREE.MeshBasicMaterial|THREE.MeshPhongMaterial> | null;
   private pause: boolean;
-  private keyDownX: boolean;
-  private keyDownC: boolean;
-  private keyDownV: boolean;
+  private frameMultiplier: number;
   private frame: number;
 
-  constructor(container: HTMLElement, indicator: HTMLElement) {
+  constructor(container: HTMLElement, indicator: HTMLElement, speedIndicator: HTMLElement, helperIndicator: HTMLElement) {
     this.container = container;
     this.indicator = indicator;
+    this.speedIndicator = speedIndicator;
+    this.helperIndicator = helperIndicator;
     this.width = this.container.offsetWidth;
     this.height = this.container.offsetHeight;
 
@@ -50,15 +53,14 @@ export default class SolarSystem {
     this.backgroundSphere = this.addBackgroundSphere();
     this.currentPlanet = null;
     this.pause = false;
-    this.keyDownX = false;
-    this.keyDownC = false;
-    this.keyDownV = false;
+    this.frameMultiplier = 1;
     this.planets = [];
     this.frame = 0;
 
     this.lights = this.addLight();
 
     this.helpers = this.addHelper()
+    this.hideHelper();
     this.orbitCurves = [];
 
     this.addSun();
@@ -73,6 +75,8 @@ export default class SolarSystem {
     
     this.addStars();
     this.addFog();
+
+    this.setFrameMultiplier(1);
 
     this.render();
 
@@ -96,27 +100,7 @@ export default class SolarSystem {
       // Zキーを押したらヘルパーの表示を切り替え
       if (event.key === 'z') {
         event.preventDefault();
-        this.helpers.axisHelper.visible = !this.helpers.axisHelper.visible;
-        this.helpers.pointLightHelper.visible = !this.helpers.pointLightHelper.visible;
-        this.orbitCurves.forEach(orbit => orbit.visible = !orbit.visible);
-      }
-
-      // Xキーを押したら10倍速モード  
-      if (event.key === 'x') {
-        event.preventDefault();
-        this.keyDownX = true; 
-      }
-      
-      // Cキーを押したら100倍速モード
-      if (event.key === 'c') {
-        event.preventDefault(); 
-        this.keyDownC = true;
-      }
-      
-      // Vーを押したら1000倍速モード
-      if (event.key === 'v') {
-        event.preventDefault(); 
-        this.keyDownV = true;
+        this.toggleHelper();
       }
 
       // 左キーでカメラモードを切り替え
@@ -130,31 +114,23 @@ export default class SolarSystem {
         event.preventDefault();
         this.nextCameraMode();
       }
+
+      // 上キーで倍速
+      if (event.key == 'ArrowUp') {
+        event.preventDefault();
+        this.fasterFrameMultiplier();
+      }
+
+      // 下キーで減速
+      if (event.key == 'ArrowDown') {
+        event.preventDefault();
+        this.slowerFrameMultiplier();
+      }
       
       // 数字キーでカメラモードを切り替え
       if ( /\d/.test(event.key) ) {
         event.preventDefault();
         this.switchCameraMode(parseInt(event.key));
-      }
-    });
-
-    window.addEventListener('keyup', (event) => {
-      // Xキーを離したら10倍速モードを解除
-      if (event.key === 'x') {
-        event.preventDefault();
-        this.keyDownX = false;
-      }
-
-      // Cキーを離したら100倍速モードを解除
-      if (event.key === 'c') {
-        event.preventDefault();
-        this.keyDownC = false;
-      }
-
-      // Vキーを離したら1000倍速モードを解除
-      if (event.key === 'v') {
-        event.preventDefault();
-        this.keyDownV = false;
       }
     });
 
@@ -203,6 +179,13 @@ export default class SolarSystem {
    */
   updateIndicator(text: string) {
     this.indicator.textContent = text;
+  }
+
+  /**
+   * スピードインジケーターを更新
+   */
+  updateSpeedIndicator(text: string) {
+    this.speedIndicator.textContent = text;
   }
 
   /**
@@ -269,12 +252,79 @@ export default class SolarSystem {
   }
 
   /**
+   * 倍速を設定
+   */
+  setFrameMultiplier(multiplier: number) {
+    this.frameMultiplier = multiplier;
+    if(this.frameMultiplier <= Math.pow(2, -5)) {
+      this.frameMultiplier = Math.pow(2, -5);
+    } else if(this.frameMultiplier >= Math.pow(2, 10)) {
+      this.frameMultiplier = Math.pow(2, 10);
+    } else {
+      this.frameMultiplier = multiplier;
+    }
+
+    this.updateSpeedIndicator(`${this.frameMultiplier}倍速`);
+  }
+
+  /**
+   * 加速
+   */
+  fasterFrameMultiplier() {
+    this.setFrameMultiplier(this.frameMultiplier * 2);
+  }
+
+  /**
+   * 減速
+   */
+  slowerFrameMultiplier() {
+    this.setFrameMultiplier(this.frameMultiplier / 2);
+  }
+
+  /**
    * 一時停止
    */
   togglePause() {
     this.pause = !this.pause;
     const pastText = this.indicator.textContent;
   }
+
+  /**
+   * ヘルパーを切り替え
+   */
+  toggleHelper() {
+    if(this.isHelperVisible) {
+      this.hideHelper();
+    } else {
+      this.showHelper();
+    }
+  }
+
+  showHelper() {
+    this.isHelperVisible = true;
+    this.helpers.axisHelper.visible = this.isHelperVisible;
+    this.helpers.pointLightHelper.visible = this.isHelperVisible;
+    if(this.orbitCurves && this.orbitCurves.length > 0) {
+      this.orbitCurves.forEach(orbit => orbit.visible = this.isHelperVisible);
+    }
+    if(this.helperIndicator) {
+      this.helperIndicator.textContent = 'Helper: On';
+    }
+  }
+
+  hideHelper() {
+    this.isHelperVisible = false;
+    this.helpers.axisHelper.visible = this.isHelperVisible;
+    this.helpers.pointLightHelper.visible = this.isHelperVisible;
+    if(this.orbitCurves && this.orbitCurves.length > 0) {
+      this.orbitCurves.forEach(orbit => orbit.visible = this.isHelperVisible);
+    }
+    if(this.helperIndicator) {
+      this.helperIndicator.textContent = 'Helper: Off';
+    }
+  }
+  
+  
 
   /**
    * フォグを追加
@@ -578,7 +628,7 @@ export default class SolarSystem {
    */
   addHelper() {
     const axisHelper = new THREE.AxesHelper(this.filterRevolutionSize(36000));
-    const pointLightHelper = new THREE.PointLightHelper(this.lights.pointLight, this.filterPlanetSize(6960 * 2, 'sun'));
+    const pointLightHelper = new THREE.PointLightHelper(this.lights.pointLight, this.filterPlanetSize(6960, 'sun'));
 
     axisHelper.visible = false;
     pointLightHelper.visible = false;
@@ -625,14 +675,12 @@ export default class SolarSystem {
   render() {
     requestAnimationFrame(() => this.render());
 
-    const speed = this.keyDownV ? 1000 : this.keyDownC ? 100 : this.keyDownX ? 10 : 1;
-
     if(!this.pause){
-      this.frame += speed;
+      this.frame += this.frameMultiplier;
   
       // 惑星（衛星）の更新
       this.planets.forEach(planet => {
-        planet.update(this.frame, speed);
+        planet.update(this.frame, this.frameMultiplier);
       });
     }
 

@@ -1,18 +1,25 @@
 <div id="app" />
+
+<div class="helper">
+  <p class="helper__text" id="helper-indicator"></p>
+</div>
+
 <div class="indicator">
   <p class="indicator__text" id="indicator"></p>
 </div>
 
+<div class="play-speed">
+  <p class="play-speed__text" id="play-speed"></p>
+</div>
+
 <div class="control-panel">
   <button class="control-panel__button" id="prev">Prev [←]</button>
-  <button class="control-panel__button" id="pause">Pause [space]</button>
+  <button class="control-panel__button" id="helper">Helper [z]</button>
   <button class="control-panel__button" id="next">Next [→]</button>
+  <button class="control-panel__button" id="slower">Slower [↓]</button>
+  <button class="control-panel__button" id="pause">Pause [space]</button>
+  <button class="control-panel__button" id="faster">Faster [↑]</button>
 </div>
-<!-- <div class="descreption-panel">
-  <p class="descreption-panel__text">
-    [z]: ヘルパーの表示切り替え / [左右キー]: カメラモードの切り替え / [space]: 一時停止
-  </p>
-</div> -->
 
 <style>
   @import '@assets/style/app.css';
