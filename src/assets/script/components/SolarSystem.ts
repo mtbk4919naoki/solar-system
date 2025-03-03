@@ -438,7 +438,7 @@ export default class SolarSystem {
     earth.setName('地球（Earth）');
 
     const moon = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(17.38, 'moon')), new THREE.MeshPhongMaterial({ color: 0xffffcc }));
-    moon.setRotation(0.1336, new THREE.Vector3(0, 1, 0));
+    moon.setRotation(0.01336, new THREE.Vector3(0, 1, 0));
     moon.setRevolution(0.152, this.filterRevolutionSize(this.filterPlanetSize(3838), 'moon'), new THREE.Vector3(0, 1, 0));
     moon.setTexture('textures/moon.jpg');
     earth.addSatellite(moon);
