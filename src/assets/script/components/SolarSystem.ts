@@ -725,7 +725,7 @@ export default class SolarSystem {
       this.controls.enabled = true;
 
       // カメラのパンを制限
-      const maxDistance = 36000;
+      const maxDistance = this.filterRevolutionSize(36000);
       const distanceFromOrigin = this.camera.position.length();
 
       if(distanceFromOrigin > maxDistance) {
@@ -749,12 +749,6 @@ export default class SolarSystem {
         cameraPosition.x += targetSize * 4.5 + 10;  
         cameraPosition.y += targetSize * 4.5 + 10;  
         cameraPosition.z += targetSize * 4.5 + 10;
-  
-        // 水星は早いので補完を早くする
-        let lerp = 0.15;
-        if(this.cameraMode <= 2) {
-          lerp = 0.30;
-        }
         
         const currentLookAt = new THREE.Vector3();
         this.camera.getWorldDirection(currentLookAt);
@@ -767,8 +761,8 @@ export default class SolarSystem {
           this.camera.lookAt(targetPosition);
         } else {
           // 減速時はカメラを線形補完
-          this.camera.position.lerp(cameraPosition, lerp);
-          this.camera.lookAt(this.camera.position.clone().add(currentLookAt.lerp(targetLookAt, lerp)));
+          this.camera.position.lerp(cameraPosition, 0.35);
+          this.camera.lookAt(this.camera.position.clone().add(currentLookAt.lerp(targetLookAt, 0.35)));
         }
       }
     }
