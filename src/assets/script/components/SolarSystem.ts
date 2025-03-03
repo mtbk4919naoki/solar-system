@@ -9,6 +9,7 @@ export default class SolarSystem {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private cameraMode: number;
+  private isCameraMoving: boolean;
   private renderer: THREE.WebGLRenderer;
   private composer: EffectComposer;
   private controls: OrbitControls;
@@ -35,6 +36,10 @@ export default class SolarSystem {
   private reverse: boolean;
   private frameMultiplier: number;
   private frame: number;
+  private alpha: number;
+  private lastRenderTime: number = 0;
+  private targetFPS: number = 60;
+  private frameInterval: number = 1000 / this.targetFPS;
 
   constructor(container: HTMLElement, indicator: HTMLElement, speedIndicator: HTMLElement, helperIndicator: HTMLElement) {
     this.container = container;
@@ -56,6 +61,8 @@ export default class SolarSystem {
     
     this.camera = this.addCamera();
     this.cameraMode = 0;
+    this.isCameraMoving = true;
+    this.alpha = 0.001;
     this.controls = this.addControls();
     this.backgroundSphere = this.addBackgroundSphere();
     this.currentPlanet = null;
@@ -88,6 +95,8 @@ export default class SolarSystem {
 
     this.composer = this.setComposer();
     this.render();
+    // renderの後にやらないとうまくいかない
+    this.switchCameraMode(0);
 
     // ウィンドウのリサイズ時の処理
     window.addEventListener('resize', () => {
@@ -97,6 +106,7 @@ export default class SolarSystem {
       this.camera.aspect = this.width / this.height;
       this.camera.updateProjectionMatrix();
     });
+
 
     // キーを押したときの処理
     window.addEventListener('keydown', (event) => {
@@ -156,45 +166,154 @@ export default class SolarSystem {
         this.reverse = false;
       }
     });
+  }
 
-    // // レイキャスターとマウスベクトルの初期化
-    // const raycaster = new THREE.Raycaster();
-    // const mouse = new THREE.Vector2();
+  /**
+   * レンダリング
+   */
+  render() {
+    requestAnimationFrame(() => this.render());
 
-    // window.addEventListener('click', (event) => {
-    //   event.preventDefault();
+    const currentTime = performance.now();
+    const deltaTime = currentTime - this.lastRenderTime;
 
-    //   // マウス位置を取得
-    //   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    //   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    if (deltaTime < this.frameInterval) {
+      return; // フレーム間隔に達していない場合はレンダリングをスキップ
+    }
 
-    //   // レイキャストを設定
-    //   raycaster.setFromCamera(mouse, this.camera);
+    this.lastRenderTime = currentTime;
 
-    //   // 惑星オブジェクトとの交差をチェック
-    //   const planetMeshes = this.planets.map(planet => planet.mesh);
+    if(!this.pause){
+      this.frame += this.frameMultiplier * (this.reverse ? -1 : 1);
+  
+      // 惑星（衛星）の更新
+      this.planets.forEach(planet => {
+        planet.update(this.frame, this.frameMultiplier);
+      });
+    }
 
-    //   // スケールを一時的に拡大
-    //   planetMeshes.forEach(mesh => mesh.scale.multiplyScalar(3.5));
+    this.backgroundSphere.position.copy(this.camera.position);
 
-    //   const intersects = raycaster.intersectObjects(planetMeshes, true);
+    // カメラモードによる切り替え
+    if(!this.isCameraMoving){
+      if(this.cameraMode === 0) {
+        this.controls.enabled = true;
+  
+        // カメラのパンを制限
+        const maxDistance = this.filterRevolutionSize(36000);
+        const distanceFromOrigin = this.camera.position.length();
+  
+        if(distanceFromOrigin > maxDistance) {
+          this.camera.position.setLength(maxDistance);
+        }
+        this.controls.update();
+      } else {
+        if(this.pause) {
+          this.controls.enabled = true;
+          this.controls.target.set(this.currentPlanet?.group.position.x, this.currentPlanet?.group.position.y, this.currentPlanet?.group.position.z);
+        } else {
+          this.controls.enabled = false;
+        
+          // カメラの位置を計算 
+          if(this.currentPlanet) {
+            const targetPosition = this.currentPlanet.group.position;
+            const targetSize = this.currentPlanet.mesh.geometry.parameters.radius;
+            this.controls.target.set(targetPosition.x, targetPosition.y, targetPosition.z);
+            
+            // カメラの位置と向きを線形補完で更新
+            const cameraPosition = targetPosition.clone();
+            cameraPosition.x += targetSize * 4.5 + 10;  
+            cameraPosition.y += targetSize * 4.5 + 10;  
+            cameraPosition.z += targetSize * 4.5 + 10;
+            
+            const currentLookAt = new THREE.Vector3();
+            this.camera.getWorldDirection(currentLookAt);
+    
+            this.camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+            this.camera.lookAt(targetPosition);
+          }
+        }
+      }
+    } else {
+      this.controls.enabled = false;
+      
+      // カメラの位置を計算 
+      if(this.currentPlanet) {
+        const targetLookAt = this.currentPlanet.group.position;
+        const targetSize = this.currentPlanet.mesh.geometry.parameters.radius;
+        
+        // カメラの位置を手動で補完
+        const targetPosition = targetLookAt.clone();
+        targetPosition.x += targetSize * 4.5 + 10;  
+        targetPosition.y += targetSize * 4.5 + 10;  
+        targetPosition.z += targetSize * 4.5 + 10;
 
-    //   // スケールを元に戻す
-    //   planetMeshes.forEach(mesh => mesh.scale.multiplyScalar(1 / 3.5));
+        const diffPosition = new THREE.Vector3(targetPosition.x - this.camera.position.x, targetPosition.y - this.camera.position.y, targetPosition.z - this.camera.position.z).length();
+        
+        const currentLookAt = new THREE.Vector3();
+        this.camera.getWorldDirection(currentLookAt);
 
-    //   if (intersects.length > 0) {
-    //     // 惑星がタップされた場合、カメラモードを切り替える
-    //     if (this.currentPlanet?.mesh == intersects[0].object) {
-    //       this.switchCameraMode(0);
-    //     } else {
-    //       this.planets.forEach(planet => {
-    //         if(intersects[0].object === planet.mesh) {
-    //           this.switchCameraMode(this.planets.indexOf(planet) + 1);
-    //         }
-    //       });
-    //     }
-    //   }
-    // });
+        const diffLookAt = new THREE.Vector3(targetLookAt.x - currentLookAt.x, targetLookAt.y - currentLookAt.y, targetLookAt.z - currentLookAt.z).length();
+
+        if(diffPosition <= 1) {
+          this.isCameraMoving = false;
+        }
+
+        this.camera.position.x += (targetPosition.x - this.camera.position.x) * this.alpha;
+        this.camera.position.y += (targetPosition.y - this.camera.position.y) * this.alpha;
+        this.camera.position.z += (targetPosition.z - this.camera.position.z) * this.alpha;
+
+        this.controls.target.x += (targetPosition.x - this.controls.target.x) * this.alpha;
+        this.controls.target.y += (targetPosition.y - this.controls.target.y) * this.alpha;
+        this.controls.target.z += (targetPosition.z - this.controls.target.z) * this.alpha;
+
+        // カメラの向きを手動で補完
+        const currentDirection = new THREE.Vector3();
+        this.camera.getWorldDirection(currentDirection);
+
+        const targetDirection = new THREE.Vector3(
+          targetLookAt.x - this.camera.position.x,
+          targetLookAt.y - this.camera.position.y,
+          targetLookAt.z - this.camera.position.z
+        ).normalize();
+
+        currentDirection.x += (targetDirection.x - currentDirection.x) * this.alpha;
+        currentDirection.y += (targetDirection.y - currentDirection.y) * this.alpha;
+        currentDirection.z += (targetDirection.z - currentDirection.z) * this.alpha;
+
+        this.camera.lookAt(
+          this.camera.position.x + currentDirection.x,
+          this.camera.position.y + currentDirection.y,
+          this.camera.position.z + currentDirection.z
+        );
+      } else {
+        const targetPosition = new THREE.Vector3(-500, 250, 500);
+        const targetLookAt = new THREE.Vector3(0, 0, 0);
+
+        this.camera.position.x += (targetPosition.x - this.camera.position.x) * this.alpha;
+        this.camera.position.y += (targetPosition.y - this.camera.position.y) * this.alpha;
+        this.camera.position.z += (targetPosition.z - this.camera.position.z) * this.alpha;
+
+        const diffPosition = new THREE.Vector3(targetPosition.x - this.camera.position.x, targetPosition.y - this.camera.position.y, targetPosition.z - this.camera.position.z).length();
+
+        if(diffPosition <= 1) {
+          this.isCameraMoving = false;
+        }
+
+        const currentDirection = new THREE.Vector3();
+        this.camera.getWorldDirection(currentDirection);
+
+        currentDirection.x += (targetLookAt.x - currentDirection.x) * this.alpha;
+        currentDirection.y += (targetLookAt.y - currentDirection.y) * this.alpha;
+        currentDirection.z += (targetLookAt.z - currentDirection.z) * this.alpha;
+
+        this.controls.target.set(0, 0, 0);
+
+        this.camera.lookAt(currentDirection.x, currentDirection.y, currentDirection.z);
+      }
+    }
+
+    this.composer.render();
   }
 
   /**
@@ -246,7 +365,6 @@ export default class SolarSystem {
    */
   addCamera() {
     this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 10, this.filterRevolutionSize(36000));
-    this.switchCameraMode(0);
     this.scene.add(this.camera);
 
     return this.camera;
@@ -257,14 +375,26 @@ export default class SolarSystem {
    */
   switchCameraMode(number: number) {
     this.cameraMode = number;
+    this.isCameraMoving = true;
+    this.alpha = 0.001;
+    const duration = 1000;
+    let progress = 0;
+
+    /**
+     * alphaを更新する
+     */
+    const moving = () => {
+      const delta = this.currentPlanet ? this.currentPlanet.revolution.speed + 1 : 1;
+      progress += delta;
+      this.alpha = progress / duration;
+      if (progress < duration || !this.isCameraMoving) {
+        requestAnimationFrame(moving);
+      }
+    }
+    moving();
     
     if (this.cameraMode === 0) {
       this.currentPlanet = null;
-      this.camera.position.set(-500, 250, 500);
-      this.camera.lookAt(0, 0, 0);
-      if(this.controls) {
-        this.controls.target.set(0, 0, 0);
-      }
       this.updateIndicator('太陽系（Solar System）');
     } else {
       this.currentPlanet = this.planets[number - 1];
@@ -701,71 +831,5 @@ export default class SolarSystem {
     this.orbitCurves.push(orbit);
 
     return orbit;
-  }
-
-  /**
-   * レンダリング
-   */
-  render() {
-    requestAnimationFrame(() => this.render());
-
-    if(!this.pause){
-      this.frame += this.frameMultiplier * (this.reverse ? -1 : 1);
-  
-      // 惑星（衛星）の更新
-      this.planets.forEach(planet => {
-        planet.update(this.frame, this.frameMultiplier);
-      });
-    }
-
-    this.backgroundSphere.position.copy(this.camera.position);
-
-    // カメラモードによる切り替え
-    if(this.cameraMode === 0) {
-      this.controls.enabled = true;
-
-      // カメラのパンを制限
-      const maxDistance = this.filterRevolutionSize(36000);
-      const distanceFromOrigin = this.camera.position.length();
-
-      if(distanceFromOrigin > maxDistance) {
-        this.camera.position.setLength(maxDistance);
-      }
-      this.controls.update();
-    } else {
-      this.controls.enabled = false;
-      
-      // カメラの位置を計算 
-      const targetPlanet = this.planets[this.cameraMode - 1];
-      const targetPosition = targetPlanet.group.position;
-      const targetSize = targetPlanet.mesh.geometry.parameters.radius;
-      this.controls.target.set(targetPosition.x, targetPosition.y, targetPosition.z);
-
-      // 水星は線形補完を早くする
-      const lerp = this.pause ? 0.10 : this.cameraMode < 2 ? 0.35: 0.10;
-      
-      // // カメラの位置と向きを線形補完で更新
-      const cameraPosition = targetPosition.clone();
-      cameraPosition.x += targetSize * 4.5 + 10;  
-      cameraPosition.y += targetSize * 4.5 + 10;  
-      cameraPosition.z += targetSize * 4.5 + 10;
-      
-      const currentLookAt = new THREE.Vector3();
-      this.camera.getWorldDirection(currentLookAt);
-
-      const targetLookAt = targetPosition.clone().sub(this.camera.position).normalize();
-
-      if(this.frameMultiplier > 1) {
-        // 加速時はカメラの線形補完をしない
-        this.camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-        this.camera.lookAt(targetPosition);
-      } else {
-        // 減速時はカメラを線形補完
-        this.camera.position.lerp(cameraPosition, lerp);
-        this.camera.lookAt(this.camera.position.clone().add(currentLookAt.lerp(targetLookAt, lerp)));
-      }
-    }
-
-    this.composer.render();
   }
 }

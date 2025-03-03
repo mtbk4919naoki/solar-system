@@ -9,11 +9,11 @@ export default class PlanetaryObject<T extends THREE.BufferGeometry, U extends T
   public group: THREE.Group;
   private geometry: T;
   private material: U;
-  private rotation: {
+  public rotation: {
     speed: number;
     axis: THREE.Vector3;
   }
-  private revolution: {
+  public revolution: {
     speed: number;
     distance: number;
     axis: THREE.Vector3;
