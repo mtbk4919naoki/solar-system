@@ -32,6 +32,7 @@ export default class SolarSystem {
   private backgroundSphere: THREE.Mesh;
   private currentPlanet: PlanetaryObject<THREE.SphereGeometry, THREE.MeshBasicMaterial|THREE.MeshPhongMaterial> | null;
   private pause: boolean;
+  private reverse: boolean;
   private frameMultiplier: number;
   private frame: number;
 
@@ -59,6 +60,7 @@ export default class SolarSystem {
     this.backgroundSphere = this.addBackgroundSphere();
     this.currentPlanet = null;
     this.pause = false;
+    this.reverse = false;
     this.frameMultiplier = 1;
     this.planets = [];
     this.frame = 0;
@@ -84,7 +86,7 @@ export default class SolarSystem {
 
     this.setFrameMultiplier(1);
 
-    this.setComposer();
+    this.composer = this.setComposer();
     this.render();
 
     // ウィンドウのリサイズ時の処理
@@ -108,6 +110,12 @@ export default class SolarSystem {
       if (event.key === 'z') {
         event.preventDefault();
         this.toggleHelper();
+      }
+
+      // Xキーを押している間は逆再生
+      if (event.key === 'x') {
+        event.preventDefault();
+        this.reverse = true;
       }
 
       // 左キーでカメラモードを切り替え
@@ -138,6 +146,14 @@ export default class SolarSystem {
       if ( /\d/.test(event.key) ) {
         event.preventDefault();
         this.switchCameraMode(parseInt(event.key));
+      }
+    });
+
+    // キーを離したときの処理
+    window.addEventListener('keyup', (event) => {
+      if (event.key === 'x') {
+        event.preventDefault();
+        this.reverse = false;
       }
     });
 
@@ -216,6 +232,7 @@ export default class SolarSystem {
 
     const pointLight = new THREE.PointLight(0xffffff, 7, this.filterRevolutionSize(36000), 0.10);
     pointLight.position.set(0, 0, 0);
+    pointLight.shadow.mapSize.set(4096, 4096);
     pointLight.castShadow = true;
 
     this.scene.add(pointLight);
@@ -454,7 +471,7 @@ export default class SolarSystem {
     earth.setTexture('textures/earth.jpg');
     earth.setName('地球（Earth）');
 
-    const moon = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(17.38, 'moon')), new THREE.MeshPhongMaterial({ color: 0xffffcc }));
+    const moon = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(17.38, 'moon')), new THREE.MeshStandardMaterial({ color: 0xffffcc, roughness: 0.85, metalness: 0.85 }));
     moon.setRotation(0.01336, new THREE.Vector3(0, 1, 0));
     moon.setRevolution(0.152, this.filterRevolutionSize(this.filterPlanetSize(3838), 'moon'), new THREE.Vector3(0, 1, 0));
     moon.setTexture('textures/moon.jpg');
@@ -512,7 +529,7 @@ export default class SolarSystem {
     saturn.setTexture('textures/saturn.jpg');
     saturn.setName('土星（Saturn）');
 
-    const ring = new PlanetaryObject(new THREE.TorusGeometry(this.filterPlanetSize(582.32, 'ringSize'), this.filterPlanetSize(583.32,'ringWidth')), new THREE.MeshPhongMaterial({ color: 0xcc9966, opacity: 0.7, transparent: true }));
+    const ring = new PlanetaryObject(new THREE.TorusGeometry(this.filterPlanetSize(582.32, 'ringSize'), this.filterPlanetSize(583.32,'ringWidth')), new THREE.MeshStandardMaterial({ color: 0xcc9966, opacity: 0.7, transparent: true, roughness: 0.85, metalness: 0.85 }));
     ring.mesh.scale.set(1,1,0.1);
     ring.setRotation(0.01, new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(5.0)), 0, Math.cos(THREE.MathUtils.degToRad(5.0))));
     ring.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(90));
@@ -538,7 +555,7 @@ export default class SolarSystem {
     uranus.setTexture('textures/uranus.jpg');
     uranus.setName('天王星（Uranus）');
 
-    const ring = new PlanetaryObject(new THREE.TorusGeometry(this.filterPlanetSize(253.62, 'ringSize'), this.filterPlanetSize(253.62,'ringWidth')), new THREE.MeshPhongMaterial({ color: 0xeeddee, opacity: 0.7, transparent: true }));
+    const ring = new PlanetaryObject(new THREE.TorusGeometry(this.filterPlanetSize(253.62, 'ringSize'), this.filterPlanetSize(253.62,'ringWidth')), new THREE.MeshStandardMaterial({ color: 0xeeddee, opacity: 0.7, transparent: true, roughness: 0.85, metalness: 0.85 }));
     ring.mesh.scale.set(1,1,0.1);
     ring.setRotation(0.01, new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(-5.0)), 0, Math.cos(THREE.MathUtils.degToRad(-5.0))));
     ring.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(0));
@@ -693,7 +710,7 @@ export default class SolarSystem {
     requestAnimationFrame(() => this.render());
 
     if(!this.pause){
-      this.frame += this.frameMultiplier;
+      this.frame += this.frameMultiplier * (this.reverse ? -1 : 1);
   
       // 惑星（衛星）の更新
       this.planets.forEach(planet => {
