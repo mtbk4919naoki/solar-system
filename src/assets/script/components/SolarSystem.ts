@@ -733,37 +733,36 @@ export default class SolarSystem {
       }
       this.controls.update();
     } else {
-      if(this.pause) {
-        this.controls.enabled = true;
+      this.controls.enabled = false;
+      
+      // カメラの位置を計算 
+      const targetPlanet = this.planets[this.cameraMode - 1];
+      const targetPosition = targetPlanet.group.position;
+      const targetSize = targetPlanet.mesh.geometry.parameters.radius;
+      this.controls.target.set(targetPosition.x, targetPosition.y, targetPosition.z);
+
+      // 水星は線形補完を早くする
+      const lerp = this.pause ? 0.10 : this.cameraMode < 2 ? 0.35: 0.10;
+      
+      // // カメラの位置と向きを線形補完で更新
+      const cameraPosition = targetPosition.clone();
+      cameraPosition.x += targetSize * 4.5 + 10;  
+      cameraPosition.y += targetSize * 4.5 + 10;  
+      cameraPosition.z += targetSize * 4.5 + 10;
+      
+      const currentLookAt = new THREE.Vector3();
+      this.camera.getWorldDirection(currentLookAt);
+
+      const targetLookAt = targetPosition.clone().sub(this.camera.position).normalize();
+
+      if(this.frameMultiplier > 1) {
+        // 加速時はカメラの線形補完をしない
+        this.camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+        this.camera.lookAt(targetPosition);
       } else {
-        this.controls.enabled = false;
-        
-        // カメラの位置を計算 
-        const targetPlanet = this.planets[this.cameraMode - 1];
-        const targetPosition = targetPlanet.group.position;
-        const targetSize = targetPlanet.mesh.geometry.parameters.radius;
-        this.controls.target.set(targetPosition.x, targetPosition.y, targetPosition.z);
-        
-        // // カメラの位置と向きを線形補完で更新
-        const cameraPosition = targetPosition.clone();
-        cameraPosition.x += targetSize * 4.5 + 10;  
-        cameraPosition.y += targetSize * 4.5 + 10;  
-        cameraPosition.z += targetSize * 4.5 + 10;
-        
-        const currentLookAt = new THREE.Vector3();
-        this.camera.getWorldDirection(currentLookAt);
-  
-        const targetLookAt = targetPosition.clone().sub(this.camera.position).normalize();
-  
-        if(this.frameMultiplier > 1) {
-          // 加速時はカメラの線形補完をしない
-          this.camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-          this.camera.lookAt(targetPosition);
-        } else {
-          // 減速時はカメラを線形補完
-          this.camera.position.lerp(cameraPosition, 0.35);
-          this.camera.lookAt(this.camera.position.clone().add(currentLookAt.lerp(targetLookAt, 0.35)));
-        }
+        // 減速時はカメラを線形補完
+        this.camera.position.lerp(cameraPosition, lerp);
+        this.camera.lookAt(this.camera.position.clone().add(currentLookAt.lerp(targetLookAt, lerp)));
       }
     }
 
