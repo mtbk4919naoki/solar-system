@@ -91,18 +91,14 @@ export default class SolarSystem {
     this.setFrameMultiplier(1);
 
     this.composer = this.setComposer();
+    this.handleResize();
     this.render();
     // renderの後にやらないとうまくいかない
     this.switchCameraMode(0);
 
     // ウィンドウのリサイズ時の処理
     window.addEventListener('resize', () => {
-      this.width = this.container.offsetWidth;
-      this.height = this.container.offsetHeight;
-      this.renderer.setSize(this.width, this.height);
-      this.camera.aspect = this.width / this.height;
-      this.camera.updateProjectionMatrix();
-      this.composer.setSize(this.width, this.height);
+      this.handleResize();
     });
 
 
@@ -195,6 +191,15 @@ export default class SolarSystem {
     }
 
     this.composer.render();
+  }
+
+  handleResize() {
+    this.width = this.container.offsetWidth;
+    this.height = this.container.offsetHeight;
+    this.renderer.setSize(this.width, this.height);
+    this.camera.aspect = this.width / this.height;
+    this.camera.updateProjectionMatrix();
+    this.composer.setSize(this.width, this.height);
   }
 
   /**
