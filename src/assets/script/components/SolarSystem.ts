@@ -62,7 +62,7 @@ export default class SolarSystem {
     this.camera = this.addCamera();
     this.cameraMode = 0;
     this.isCameraTransitioning = true;
-    this.alpha = 0.3;
+    this.alpha = 0.5;
     this.controls = this.addControls();
     this.backgroundSphere = this.addBackgroundSphere();
     this.currentPlanet = null;
@@ -261,8 +261,8 @@ export default class SolarSystem {
   switchCameraMode(number: number) {
     this.cameraMode = number;
     this.isCameraTransitioning = true;
-    this.alpha = 0.3;
-    const duration = 1000;
+    this.alpha = 0.5;
+    const duration = 200;
     let progress = 0;
     
     if (this.cameraMode === 0) {
@@ -277,7 +277,7 @@ export default class SolarSystem {
      * alphaを更新する
      */
     const moving = () => {
-      progress += 2;
+      progress += 1;
       this.alpha = progress / duration;
       if (progress < duration || !this.isCameraTransitioning) {
         requestAnimationFrame(moving);
@@ -305,14 +305,24 @@ export default class SolarSystem {
    * @returns 
    */
   smoothCameraTransition() {
-    const { startPosition, startLookAt, endPosition, endLookAt } = this.calcCameraTransitionData();
+    const { startPosition, startLookAt, endPosition, endLookAt, startDirection, endDirection } = this.calcCameraTransitionData();
 
     const position = new THREE.Vector3().lerpVectors(startPosition, endPosition, this.alpha);
-    const lookAt = new THREE.Vector3().lerpVectors(startLookAt, endLookAt, this.alpha);
+
+    // @DEBIG
+    // const distance = position.distanceTo(endPosition);
+    // const difference = endDirection.clone().sub(startDirection);
+    // this.updateIndicator(`${distance} / ${difference.length()}`)
 
     if (position.distanceTo(endPosition) < 1) {
       this.isCameraTransitioning = false;
     }
+
+    // 近づいた時に物体に追いつけないことがあるので、物体の位置に向けてカメラを移動させる
+    const offset = endPosition.clone().sub(startPosition).normalize();
+    position.add(offset);
+
+    const lookAt = new THREE.Vector3().lerpVectors(startLookAt, endLookAt, this.alpha);
 
     this.camera.position.copy(position);
     this.controls.target.copy(lookAt);
@@ -339,10 +349,25 @@ export default class SolarSystem {
     this.camera.getWorldDirection(startDirection).normalize();
     const endPosition = this.currentPlanet?.group.position.clone() ?? new THREE.Vector3(500, 250, 500);
     const endLookAt = this.currentPlanet?.group.position ?? new THREE.Vector3(0, 0, 0);
+
     if(this.currentPlanet) {
       const meshSize = this.currentPlanet?.mesh.geometry.parameters.radius ?? 0;
-      const offsetVector = startPosition.clone().sub(startLookAt).normalize().multiplyScalar(meshSize * 5 + 10);
-      endPosition.add(offsetVector);
+
+      if(this.isCameraTransitioning) {
+        // カメラ移動中はカメラの向きを変える
+        const offsetVector = startPosition.clone().sub(endLookAt).normalize().multiplyScalar(meshSize * 5 + 10);
+        endPosition.add(offsetVector);
+
+        // やや俯瞰にする
+        const threshold = meshSize * 1.5;
+        if(endPosition.y < ( threshold )) {
+          endPosition.y = threshold;
+        }
+      } else {
+        // カメラ相対位置固定はカメラの向きを変えない
+        const offsetVector = startPosition.clone().sub(startLookAt).normalize().multiplyScalar(meshSize * 5 + 10);
+        endPosition.add(offsetVector);
+      }
     }
     this.controls.target.set(endLookAt.x, endLookAt.y, endLookAt.z);
     const endDirection = new THREE.Vector3(0, 0, 0);
