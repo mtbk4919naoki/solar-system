@@ -4,9 +4,6 @@ import PlanetaryObject from './modules/PlanetaryObject';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
-import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass.js';
 
 export default class SolarSystem {
   private scene: THREE.Scene;
@@ -105,6 +102,7 @@ export default class SolarSystem {
       this.renderer.setSize(this.width, this.height);
       this.camera.aspect = this.width / this.height;
       this.camera.updateProjectionMatrix();
+      this.composer.setSize(this.width, this.height);
     });
 
 
@@ -221,7 +219,7 @@ export default class SolarSystem {
     this.composer.addPass(new RenderPass(this.scene, this.camera));
 
     // Bloom effect
-    this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(this.width, this.height), 1.5, 1.5, 0.5));
+    this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(this.width / 2, this.height / 2), 1.0, 1.0, 0.5));
 
     return this.composer;
   }
@@ -509,7 +507,7 @@ export default class SolarSystem {
     const sun = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(6960, 'sun')), new THREE.MeshStandardMaterial({ color: 0xffee00 }));
     sun.setRotation(0.00563, new THREE.Vector3(0, 1, 0));
     sun.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(7.25));
-    sun.setEmissive({ color: new THREE.Color(0xffee00), intensity: 1.5, map: 'textures/sun.jpg' });
+    sun.setEmissive({ color: new THREE.Color(0xffee00), intensity: 1.5, map: 'textures/sun.webp' });
     sun.setName('太陽（Sun）');
     sun.mesh.castShadow = false;
     this.planets.push(sun);
@@ -524,7 +522,7 @@ export default class SolarSystem {
     const mercury = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(24.40)), new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.85 }));
     mercury.setRotation(0.0192, new THREE.Vector3(0, 1, 0));
     mercury.setRevolution(0.019862, this.filterRevolutionSize(387.0));
-    mercury.setTexture('textures/mercury.jpg');
+    mercury.setTexture('textures/mercury.webp');
     mercury.setName('水星（Mercury）');
     this.planets.push(mercury);
     this.scene.add(mercury.group);
@@ -540,7 +538,7 @@ export default class SolarSystem {
     const venus = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(60.52)), new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.85 }));
     venus.setRotation(-0.00593, new THREE.Vector3(0, 1, 0));
     venus.setRevolution(0.00512, this.filterRevolutionSize(723.3));
-    venus.setTexture('textures/venus.jpg');
+    venus.setTexture('textures/venus.webp');
     venus.setName('金星（Venus）');
     venus.setAxisTilt(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(177.36));
     this.planets.push(venus);
@@ -558,13 +556,13 @@ export default class SolarSystem {
     earth.setRotation(0.152, new THREE.Vector3(0, 1, 0));
     earth.setRevolution(0.0032, this.filterRevolutionSize(1000), new THREE.Vector3(0, 1, 0));
     earth.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(23.5));
-    earth.setTexture('textures/earth.jpg');
+    earth.setTexture('textures/earth.webp');
     earth.setName('地球（Earth）');
 
     const moon = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(17.38, 'moon')), new THREE.MeshStandardMaterial({ color: 0xffffcc, roughness: 0.85, metalness: 0.85 }));
     moon.setRotation(0.01336, new THREE.Vector3(0, 1, 0));
     moon.setRevolution(0.152, this.filterRevolutionSize(this.filterPlanetSize(3838), 'moon'), new THREE.Vector3(0, 1, 0));
-    moon.setTexture('textures/moon.jpg');
+    moon.setTexture('textures/moon.webp');
     earth.addSatellite(moon);
 
     this.planets.push(earth);
@@ -582,7 +580,7 @@ export default class SolarSystem {
     mars.setRotation(0.152, new THREE.Vector3(0, 1, 0));
     mars.setRevolution(0.0017, this.filterRevolutionSize(1523.7));
     mars.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(25.19));
-    mars.setTexture('textures/mars.jpg');
+    mars.setTexture('textures/mars.webp');
     mars.setName('火星（Mars）');
     this.planets.push(mars);
     this.scene.add(mars.group);
@@ -599,7 +597,7 @@ export default class SolarSystem {
     jupiter.setRotation(0.3648, new THREE.Vector3(0, 1, 0));
     jupiter.setRevolution(0.00027, this.filterRevolutionSize(5203));
     jupiter.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(3.1));
-    jupiter.setTexture('textures/jupiter.jpg');
+    jupiter.setTexture('textures/jupiter.webp');
     jupiter.setName('木星（Jupiter）');
     this.planets.push(jupiter);
     this.scene.add(jupiter.group);
@@ -616,14 +614,14 @@ export default class SolarSystem {
     saturn.setRotation(0.3648, new THREE.Vector3(0, 1, 0));
     saturn.setRevolution(0.0001086, this.filterRevolutionSize(9538.8));
     saturn.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(26.7));
-    saturn.setTexture('textures/saturn.jpg');
+    saturn.setTexture('textures/saturn.webp');
     saturn.setName('土星（Saturn）');
 
     const ring = new PlanetaryObject(new THREE.TorusGeometry(this.filterPlanetSize(582.32, 'ringSize'), this.filterPlanetSize(583.32,'ringWidth')), new THREE.MeshStandardMaterial({ color: 0xcc9966, opacity: 0.7, transparent: true, roughness: 0.85, metalness: 0.85 }));
     ring.mesh.scale.set(1,1,0.1);
     ring.setRotation(0.01, new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(5.0)), 0, Math.cos(THREE.MathUtils.degToRad(5.0))));
     ring.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(90));
-    ring.setTexture('textures/saturn.jpg');
+    ring.setTexture('textures/saturn.webp');
 
     saturn.addSatellite(ring);
 
@@ -642,14 +640,14 @@ export default class SolarSystem {
     uranus.setRotation(0.20267, new THREE.Vector3(0, 1, 0));
     uranus.setRevolution(0.00003808, this.filterRevolutionSize(19191.4));
     uranus.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(98));
-    uranus.setTexture('textures/uranus.jpg');
+    uranus.setTexture('textures/uranus.webp');
     uranus.setName('天王星（Uranus）');
 
     const ring = new PlanetaryObject(new THREE.TorusGeometry(this.filterPlanetSize(253.62, 'ringSize'), this.filterPlanetSize(253.62,'ringWidth')), new THREE.MeshStandardMaterial({ color: 0xeeddee, opacity: 0.7, transparent: true, roughness: 0.85, metalness: 0.85 }));
     ring.mesh.scale.set(1,1,0.1);
     ring.setRotation(0.01, new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(-5.0)), 0, Math.cos(THREE.MathUtils.degToRad(-5.0))));
     ring.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(0));
-    ring.setTexture('textures/uranus.jpg');
+    ring.setTexture('textures/uranus.webp');
 
     uranus.addSatellite(ring);
 
@@ -668,7 +666,7 @@ export default class SolarSystem {
     neptune.setRotation(0.228, new THREE.Vector3(0, 1, 0));
     neptune.setRevolution(0.0000194, this.filterRevolutionSize(30061.1));
     neptune.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(28.3));
-    neptune.setTexture('textures/neptune.jpg');
+    neptune.setTexture('textures/neptune.webp');
     neptune.setName('海王星（Neptune）');
     this.planets.push(neptune);
     this.scene.add(neptune.group);
@@ -705,6 +703,9 @@ export default class SolarSystem {
    */
   addBackgroundSphere() {
     const backgroundSphereGeometry = new THREE.SphereGeometry(this.filterRevolutionSize(36000));
+    const texture = new THREE.TextureLoader().load('textures/space.webp');
+    texture.minFilter = THREE.LinearMipMapLinearFilter;
+    texture.generateMipmaps = true;
     // // ShaderMaterialを使用しない場合
     // const backgroundSphereMaterial = new THREE.MeshBasicMaterial({
     //   color: 0x444444,
@@ -712,12 +713,12 @@ export default class SolarSystem {
     //   transparent: true,
     //   side: THREE.BackSide
     // });
-    // backgroundSphereMaterial.map = new THREE.TextureLoader().load('textures/space.jpg');
+    // backgroundSphereMaterial.map = new THREE.TextureLoader().load('textures/space.webp');
 
     // ShaderMaterialを使用する場合
     const backgroundSphereMaterial = new THREE.ShaderMaterial({
       uniforms: {
-        uTexture: { value: new THREE.TextureLoader().load('textures/space.jpg') },
+        uTexture: { value: texture },
       },
       vertexShader: `
         varying vec2 vUv;
@@ -738,7 +739,6 @@ export default class SolarSystem {
       `,
       side: THREE.BackSide,
       transparent: true,
-
     });
     const backgroundSphere = new THREE.Mesh(backgroundSphereGeometry, backgroundSphereMaterial);
 
