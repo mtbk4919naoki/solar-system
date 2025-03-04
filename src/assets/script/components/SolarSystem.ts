@@ -234,7 +234,7 @@ export default class SolarSystem {
 
     const pointLight = new THREE.PointLight(0xffffff, 7, this.filterRevolutionSize(36000), 0.10);
     pointLight.position.set(0, 0, 0);
-    pointLight.shadow.mapSize.set(4096, 4096);
+    pointLight.shadow.mapSize.set(2048, 2048);
     pointLight.castShadow = true;
 
     this.scene.add(pointLight);
