@@ -4,6 +4,9 @@ import PlanetaryObject from './modules/PlanetaryObject';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
+import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass.js';
 
 export default class SolarSystem {
   private scene: THREE.Scene;
@@ -59,7 +62,7 @@ export default class SolarSystem {
     this.camera = this.addCamera();
     this.cameraMode = 0;
     this.isCameraTransitioning = true;
-    this.alpha = 0.2;
+    this.alpha = 0.3;
     this.controls = this.addControls();
     this.backgroundSphere = this.addBackgroundSphere();
     this.currentPlanet = null;
@@ -216,6 +219,8 @@ export default class SolarSystem {
   setComposer() {
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
+
+    // Bloom effect
     this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(this.width, this.height), 1.5, 1.5, 0.5));
 
     return this.composer;
@@ -256,7 +261,7 @@ export default class SolarSystem {
   switchCameraMode(number: number) {
     this.cameraMode = number;
     this.isCameraTransitioning = true;
-    this.alpha = 0.2;
+    this.alpha = 0.3;
     const duration = 1000;
     let progress = 0;
     
@@ -272,7 +277,7 @@ export default class SolarSystem {
      * alphaを更新する
      */
     const moving = () => {
-      progress += 1;
+      progress += 2;
       this.alpha = progress / duration;
       if (progress < duration || !this.isCameraTransitioning) {
         requestAnimationFrame(moving);
@@ -300,9 +305,8 @@ export default class SolarSystem {
    * @returns 
    */
   smoothCameraTransition() {
-    const { startPosition, startLookAt, startDirection, endDirection, endPosition, endLookAt } = this.calcCameraTransitionData();
+    const { startPosition, startLookAt, endPosition, endLookAt } = this.calcCameraTransitionData();
 
-    // 手動で補完
     const position = new THREE.Vector3().lerpVectors(startPosition, endPosition, this.alpha);
     const lookAt = new THREE.Vector3().lerpVectors(startLookAt, endLookAt, this.alpha);
 
