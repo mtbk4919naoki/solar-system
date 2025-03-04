@@ -234,7 +234,7 @@ export default class SolarSystem {
 
     const pointLight = new THREE.PointLight(0xffffff, 7, this.filterRevolutionSize(36000), 0.10);
     pointLight.position.set(0, 0, 0);
-    pointLight.shadow.mapSize.set(2048, 2048);
+    pointLight.shadow.mapSize.set(4096, 4096);
     pointLight.castShadow = true;
 
     this.scene.add(pointLight);
@@ -619,6 +619,7 @@ export default class SolarSystem {
 
     const ring = new PlanetaryObject(new THREE.TorusGeometry(this.filterPlanetSize(582.32, 'ringSize'), this.filterPlanetSize(583.32,'ringWidth')), new THREE.MeshStandardMaterial({ color: 0xcc9966, opacity: 0.7, transparent: true, roughness: 0.85, metalness: 0.85 }));
     ring.mesh.scale.set(1,1,0.1);
+    ring.mesh.castShadow = false;
     ring.setRotation(0.01, new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(5.0)), 0, Math.cos(THREE.MathUtils.degToRad(5.0))));
     ring.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(90));
     ring.setTexture('textures/saturn.webp');
@@ -645,6 +646,7 @@ export default class SolarSystem {
 
     const ring = new PlanetaryObject(new THREE.TorusGeometry(this.filterPlanetSize(253.62, 'ringSize'), this.filterPlanetSize(253.62,'ringWidth')), new THREE.MeshStandardMaterial({ color: 0xeeddee, opacity: 0.7, transparent: true, roughness: 0.85, metalness: 0.85 }));
     ring.mesh.scale.set(1,1,0.1);
+    ring.mesh.castShadow = false;
     ring.setRotation(0.01, new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(-5.0)), 0, Math.cos(THREE.MathUtils.degToRad(-5.0))));
     ring.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(0));
     ring.setTexture('textures/uranus.webp');
