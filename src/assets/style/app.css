@@ -21,6 +21,8 @@ img {
 #app {
   width: 100%;
   height: 100%;
+  width: 100svw;
+  height: 100svh;
 }
 
 .control-panel {
