@@ -4,6 +4,7 @@ import PlanetaryObject from './modules/PlanetaryObject';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import clamp from '@assets/script/library/clamp';
 
 export default class SolarSystem {
   private scene: THREE.Scene;
@@ -59,7 +60,7 @@ export default class SolarSystem {
     this.camera = this.addCamera();
     this.cameraMode = 0;
     this.isCameraTransitioning = true;
-    this.alpha = 0.5;
+    this.alpha = 0.1;
     this.controls = this.addControls();
     this.backgroundSphere = this.addBackgroundSphere();
     this.currentPlanet = null;
@@ -264,7 +265,7 @@ export default class SolarSystem {
   switchCameraMode(number: number) {
     this.cameraMode = number;
     this.isCameraTransitioning = true;
-    this.alpha = 0.5;
+    this.alpha = 0.1;
     const duration = 200;
     let progress = 0;
     
@@ -281,7 +282,7 @@ export default class SolarSystem {
      */
     const moving = () => {
       progress += 1;
-      this.alpha = progress / duration;
+      this.alpha = clamp(progress / duration, 0, 1);
       if (progress < duration || !this.isCameraTransitioning) {
         requestAnimationFrame(moving);
       }
