@@ -225,7 +225,7 @@ export default class SolarSystem {
     this.composer.addPass(new RenderPass(this.scene, this.camera));
 
     // Bloom effect
-    this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(this.width / 2, this.height / 2), 1.0, 1.0, 0.5));
+    this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(this.width / 2, this.height / 2), 1.2, 1.4, 0.5));
 
     return this.composer;
   }
@@ -691,10 +691,10 @@ export default class SolarSystem {
     const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 3 });
     
     const starVertices = [];
-    for (let i = this.filterRevolutionSize(8000); i > 0; i--) {
-      const x = THREE.MathUtils.randFloatSpread(this.filterRevolutionSize(36000));
-      const y = THREE.MathUtils.randFloatSpread(this.filterRevolutionSize(36000));
-      const z = THREE.MathUtils.randFloatSpread(this.filterRevolutionSize(36000));
+    for (let i = this.filterRevolutionSize(40000); i > 0; i--) {
+      const x = THREE.MathUtils.randFloatSpread(this.filterRevolutionSize(80000));
+      const y = THREE.MathUtils.randFloatSpread(this.filterRevolutionSize(80000));
+      const z = THREE.MathUtils.randFloatSpread(this.filterRevolutionSize(80000));
       starVertices.push(x, y, z);
     }
 
