@@ -742,7 +742,7 @@ export default class SolarSystem {
 
         void main() {
           gl_FragColor = texture2D(uTexture, vUv);
-          gl_FragColor.a = 0.06;
+          gl_FragColor.a = 0.03;
         }
       `,
       side: THREE.BackSide,
