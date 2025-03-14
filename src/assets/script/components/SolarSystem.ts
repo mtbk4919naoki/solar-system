@@ -38,6 +38,7 @@ export default class SolarSystem {
   private frameMultiplier: number;
   private frame: number;
   private alpha: number;
+  private easing: number;
 
   constructor(container: HTMLElement, indicator: HTMLElement, speedIndicator: HTMLElement, helperIndicator: HTMLElement) {
     this.container = container;
@@ -61,6 +62,7 @@ export default class SolarSystem {
     this.cameraMode = 0;
     this.isCameraTransitioning = true;
     this.alpha = 0.1;
+    this.easing = 0;
     this.controls = this.addControls();
     this.backgroundSphere = this.addBackgroundSphere();
     this.currentPlanet = null;
@@ -168,9 +170,9 @@ export default class SolarSystem {
    */
   render() {
     requestAnimationFrame(() => this.render());
-    
     if(!this.pause){
-      this.frame += this.frameMultiplier * (this.reverse ? -1 : 1);
+      const delta = this.frameMultiplier * (this.reverse ? -1 : 1);
+      this.frame += delta * (1 - this.easing);
       
       // 惑星（衛星）の更新
       this.planets.forEach(planet => {
@@ -312,13 +314,14 @@ export default class SolarSystem {
     const { startPosition, startLookAt, endPosition, endLookAt, startDirection, endDirection } = this.calcCameraTransitionData();
 
     const position = new THREE.Vector3().lerpVectors(startPosition, endPosition, this.alpha);
-
     // @DEBIG
     // const distance = position.distanceTo(endPosition);
     // const difference = endDirection.clone().sub(startDirection);
     // this.updateIndicator(`${distance} / ${difference.length()}`)
 
+    this.easing = clamp(this.easing + 0.01, 0, 1);
     if (position.distanceTo(endPosition) < 1) {
+      // this.pause = false;
       this.isCameraTransitioning = false;
     }
 
@@ -338,6 +341,7 @@ export default class SolarSystem {
    */
   relativeCameraTransition() {
     const { endPosition, endLookAt } = this.calcCameraTransitionData();
+    this.easing = clamp(this.easing - 0.02, 0, 1);
     this.camera.position.copy(endPosition);
     this.controls.target.copy(endLookAt);
     this.camera.lookAt(endLookAt);
