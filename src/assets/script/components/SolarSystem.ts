@@ -5,6 +5,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import clamp from '@assets/script/library/clamp';
+import { PLANET_DATA, type PlanetData } from '@assets/script/components/variables/PLANET_DATA';
 
 export default class SolarSystem {
   private scene: THREE.Scene;
@@ -30,9 +31,9 @@ export default class SolarSystem {
     pointLightHelper: THREE.PointLightHelper;
   };
   private orbitCurves: THREE.Line[];
-  private planets: PlanetaryObject<THREE.SphereGeometry, THREE.MeshBasicMaterial|THREE.MeshPhongMaterial>[];
+  private planets: PlanetaryObject<THREE.SphereGeometry, THREE.MeshStandardMaterial>[];
   private backgroundSphere: THREE.Mesh;
-  private currentPlanet: PlanetaryObject<THREE.SphereGeometry, THREE.MeshBasicMaterial|THREE.MeshPhongMaterial> | null;
+  private currentPlanet: PlanetaryObject<THREE.SphereGeometry, THREE.MeshStandardMaterial> | null;
   private pause: boolean;
   private reverse: boolean;
   private frameMultiplier: number;
@@ -70,7 +71,7 @@ export default class SolarSystem {
     this.reverse = false;
     this.frameMultiplier = 1;
     this.planets = [];
-    this.frame = 0;
+    this.frame = -5113000; // いい感じに全部の惑星が画角に収まる
 
     this.lights = this.addLight();
 
@@ -78,15 +79,9 @@ export default class SolarSystem {
     this.hideHelper();
     this.orbitCurves = [];
 
-    this.addSun();
-    this.addMercury();
-    this.addVenus();
-    this.addEarth();
-    this.addMars();
-    this.addJupiter();
-    this.addSaturn();
-    this.addUranus();
-    this.addNeptune();
+    PLANET_DATA.forEach(planetData => {
+      this.addPlanet(planetData);
+    });
     
     this.addStars();
     this.addFog();
@@ -171,12 +166,11 @@ export default class SolarSystem {
   render() {
     requestAnimationFrame(() => this.render());
     if(!this.pause){
-      const delta = this.frameMultiplier * (this.reverse ? -1 : 1);
-      this.frame += delta * (1 - this.easing);
-      
+      const speed = this.frameMultiplier * (1 - this.easing) * (this.reverse ? -1 : 1);
+      this.frame += speed;
       // 惑星（衛星）の更新
       this.planets.forEach(planet => {
-        planet.update(this.frame, this.frameMultiplier * (this.reverse ? -1 : 1));
+        planet.update(this.frame, speed);
       });
     }
     
@@ -186,11 +180,14 @@ export default class SolarSystem {
     if(this.isCameraTransitioning) {
       // カメラ移動中
       this.smoothCameraTransition();
+      this.easing = clamp(this.easing + 0.01, 0, 1);
     } else if(!this.currentPlanet || this.pause) {
       // 俯瞰モードか一時停止中
+      this.easing = clamp(this.easing - 0.01, 0, 1);
     } else {
       // 惑星追従中
       this.relativeCameraTransition();
+      this.easing = clamp(this.easing - 0.01, 0, 1);
     }
 
     this.composer.render();
@@ -227,7 +224,7 @@ export default class SolarSystem {
     this.composer.addPass(new RenderPass(this.scene, this.camera));
 
     // Bloom effect
-    this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(this.width / 2, this.height / 2), 1.2, 1.4, 0.5));
+    this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(this.width / 2, this.height / 2), 1.5, 1.5, 0.5));
 
     return this.composer;
   }
@@ -240,7 +237,7 @@ export default class SolarSystem {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
     this.scene.add(ambientLight);
 
-    const pointLight = new THREE.PointLight(0xffffff, 7, this.filterRevolutionSize(36000), 0.10);
+    const pointLight = new THREE.PointLight(0xffffff, 7, this.filterDistance(45), 0.10);
     pointLight.position.set(0, 0, 0);
     pointLight.shadow.mapSize.set(4096, 4096);
     pointLight.castShadow = true;
@@ -255,7 +252,7 @@ export default class SolarSystem {
    * @returns カメラ
    */
   addCamera() {
-    this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 10, this.filterRevolutionSize(36000));
+    this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 10, this.filterDistance(150));
     this.scene.add(this.camera);
 
     return this.camera;
@@ -268,7 +265,8 @@ export default class SolarSystem {
     this.cameraMode = number;
     this.isCameraTransitioning = true;
     this.alpha = 0.1;
-    const duration = 200;
+    this.easing = 0;
+    const duration = 300;
     let progress = 0;
     
     if (this.cameraMode === 0) {
@@ -319,14 +317,13 @@ export default class SolarSystem {
     // const difference = endDirection.clone().sub(startDirection);
     // this.updateIndicator(`${distance} / ${difference.length()}`)
 
-    this.easing = clamp(this.easing + 0.01, 0, 1);
-    if (position.distanceTo(endPosition) < 1) {
+    if (position.distanceTo(endPosition) < 0.5) {
       // this.pause = false;
       this.isCameraTransitioning = false;
     }
 
     // 近づいた時に物体に追いつけないことがあるので、物体の位置に向けてカメラを移動させる
-    const offset = endPosition.clone().sub(startPosition).normalize();
+    const offset = endPosition.clone().sub(startPosition).normalize().multiplyScalar(0.5);
     position.add(offset);
 
     const lookAt = new THREE.Vector3().lerpVectors(startLookAt, endLookAt, this.alpha);
@@ -341,7 +338,6 @@ export default class SolarSystem {
    */
   relativeCameraTransition() {
     const { endPosition, endLookAt } = this.calcCameraTransitionData();
-    this.easing = clamp(this.easing - 0.02, 0, 1);
     this.camera.position.copy(endPosition);
     this.controls.target.copy(endLookAt);
     this.camera.lookAt(endLookAt);
@@ -355,7 +351,7 @@ export default class SolarSystem {
     const startLookAt = this.controls.target.clone();
     const startDirection = new THREE.Vector3(0, 0, 0);
     this.camera.getWorldDirection(startDirection).normalize();
-    const endPosition = this.currentPlanet?.group.position.clone() ?? new THREE.Vector3(500, 250, 500);
+    const endPosition = this.currentPlanet?.group.position.clone() ?? new THREE.Vector3(400, 200, 400);
     const endLookAt = this.currentPlanet?.group.position ?? new THREE.Vector3(0, 0, 0);
 
     if(this.currentPlanet) {
@@ -465,7 +461,7 @@ export default class SolarSystem {
    * フォグを追加
    */
   addFog() {
-    this.scene.fog = new THREE.Fog(0x000000, this.filterRevolutionSize(3600), this.filterRevolutionSize(36000));
+    this.scene.fog = new THREE.Fog(0x000000, this.filterDistance(10), this.filterDistance(150));
   }
 
   /**
@@ -479,215 +475,97 @@ export default class SolarSystem {
   }
 
   /**
-   * 惑星のサイズをフィルタリング
-   * @param number 惑星のサイズ
-   * @param mode フィルタリングモード
-   * @returns フィルタリングされた惑星のサイズ
+   * 惑星の半径をフィルタリング
+   * @param number 惑星の半径
+   * @returns フィルタリングされた惑星の半径
    */
-  filterPlanetSize(number: number, mode?: string) {
-    if(mode === 'sun') {
-      return Math.pow(number, 0.55);
+  filterRadius(number: number, id?: string) {
+    return clamp(Math.pow(number, 0.50) * 0.1, 1, 100);
+  }
+
+  /**
+   * 惑星の距離をフィルタリング
+   * @param number 惑星の距離
+   * @returns フィルタリングされた惑星の距離
+   */
+  filterDistance(number: number, id?: string) {
+    if(number === 0) return 0;
+    return clamp(Math.pow(number, 0.50) * 400 - 100, 25, 10000);
+  }
+
+  /**
+   * 惑星の公転速度をフィルタリング
+   * @param number 惑星の公転周期（日）
+   * @returns フィルタリングされた惑星の公転速度
+   */
+  filterOrbitalSpeed(period: number, id?: string) {
+    if(period === 0) return 0;
+    return (1 / period) * 1 ;
+  }
+
+  /**
+   * 惑星の自転速度をフィルタリング
+   * @param number 惑星の自転周期（時間）
+   * @returns フィルタリングされた惑星の自転速度
+   */
+  filterRotationSpeed(period: number, id?: string) {
+    if(period === 0) return 0;
+    return clamp((1 / (period / 24)) * 1, 0, 0.05);
+  }
+
+  /**
+   * 惑星を追加
+   */
+  addPlanet(planetData: PlanetData) {
+    const geometry = new THREE.SphereGeometry(this.filterRadius(planetData.radius));
+    const material = new THREE.MeshStandardMaterial({ color: planetData.map?.color, roughness: 0.85, metalness: 0.85 });
+    const planet = new PlanetaryObject(geometry, material);
+    planet.setRotation(this.filterRotationSpeed(planetData.rotationPeriod, planetData.id), new THREE.Vector3(0, 1, 0));
+    planet.setRevolution(this.filterOrbitalSpeed(planetData.orbitalPeriod, planetData.id), this.filterDistance(planetData.distance), new THREE.Vector3(0, 1, 0));
+    planet.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(planetData.axisTilt));
+    planet.setName(`${planetData.name.ja}（${planetData.name.en}）`);
+
+    if(planetData.map?.emissive) {
+      planet.setEmissive({ color: new THREE.Color(planetData.map.emissive.color), intensity: planetData.map.emissive.intensity, map: planetData.map.src });
+      planet.mesh.castShadow = false;
+    } else if (planetData.map) {
+      planet.setTexture(planetData.map.src);
+      planet.mesh.castShadow = true;
     }
-    if(mode === 'moon') {
-      return Math.pow(number, 0.35);
+
+    // 衛星を追加
+    if(planetData.satellites) {
+      planetData.satellites.forEach(satelliteData => {
+        let satelliteGeometry: THREE.SphereGeometry | THREE.TorusGeometry;
+        let satelliteMaterial: THREE.MeshStandardMaterial;
+        let satellite: PlanetaryObject<THREE.SphereGeometry | THREE.TorusGeometry, THREE.MeshStandardMaterial>;
+        if(satelliteData.type === 'ring') {
+          satelliteGeometry = new THREE.TorusGeometry(this.filterRadius(satelliteData.radius, satelliteData.id) * 1.5, this.filterRadius(satelliteData.radius / 10, satelliteData.id));
+          satelliteMaterial = new THREE.MeshStandardMaterial({ color: satelliteData.map?.color, roughness: 0.85, metalness: 0.85, opacity: 0.7, transparent: true });
+          satellite = new PlanetaryObject(satelliteGeometry, satelliteMaterial);
+          satellite.mesh.scale.set(1,1,0.1);
+          satellite.setRotation(this.filterRotationSpeed(satelliteData.rotationPeriod, satelliteData.id), new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(5.0)), 0, Math.cos(THREE.MathUtils.degToRad(5.0))));
+          satellite.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(satelliteData.axisTilt));
+          satellite.mesh.castShadow = false;
+        } else {
+          satelliteGeometry = new THREE.SphereGeometry(this.filterRadius(satelliteData.radius, satelliteData.id));
+          satelliteMaterial = new THREE.MeshStandardMaterial({ color: satelliteData.map?.color, roughness: 0.85, metalness: 0.85 });
+          satellite = new PlanetaryObject(satelliteGeometry, satelliteMaterial);
+          satellite.setRotation(this.filterRotationSpeed(satelliteData.rotationPeriod, satelliteData.id), new THREE.Vector3(0, 1, 0));
+          satellite.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(satelliteData.axisTilt));
+          satellite.mesh.castShadow = true;
+        }
+        satellite.setRevolution(this.filterOrbitalSpeed(satelliteData.orbitalPeriod, satelliteData.id), this.filterDistance(satelliteData.distance, satelliteData.id), new THREE.Vector3(0, 1, 0));
+        if(satelliteData.map?.src) {
+          satellite.setTexture(satelliteData.map?.src);
+        }
+        planet.addSatellite(satellite);
+      });
     }
-    if(mode === 'ringSize') {
-      return Math.pow(Math.pow(number, 1.6), 0.45);
-    }
-    if(mode === 'ringWidth') {
-      return Math.pow(number, 0.45);
-    }
-    return Math.pow(number, 0.65);
-  }
 
-  /**
-   * 惑星の軌道のサイズをフィルタリング
-   * @param number 惑星の軌道のサイズ
-   * @param mode フィルタリングモード
-   * @returns フィルタリングされた惑星の軌道のサイズ
-   */
-  filterRevolutionSize(number: number, mode?: string) {
-    if(mode === 'moon') {
-      return Math.pow(number, 0.75);
-    }
-    return Math.pow(number, 0.90);
-  }
-
-  /**
-   * 太陽を追加
-   */
-  addSun() {
-    const sun = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(6960, 'sun')), new THREE.MeshStandardMaterial({ color: 0xffee00 }));
-    sun.setRotation(0.00563, new THREE.Vector3(0, 1, 0));
-    sun.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(7.25));
-    sun.setEmissive({ color: new THREE.Color(0xffee00), intensity: 1.5, map: 'textures/sun.webp' });
-    sun.setName('太陽（Sun）');
-    sun.mesh.castShadow = false;
-    this.planets.push(sun);
-
-    this.scene.add(sun.mesh);
-  }
-
-  /**
-   * 水星を追加
-   */
-  addMercury() {
-    const mercury = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(24.40)), new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.85 }));
-    mercury.setRotation(0.0192, new THREE.Vector3(0, 1, 0));
-    mercury.setRevolution(0.019862, this.filterRevolutionSize(387.0));
-    mercury.setTexture('textures/mercury.webp');
-    mercury.setName('水星（Mercury）');
-    this.planets.push(mercury);
-    this.scene.add(mercury.group);
-
-    // 軌道を追加
-    this.addOrbit(this.filterRevolutionSize(387.0));
-  }
-
-  /**
-   * 金星を追加
-   */
-  addVenus() {
-    const venus = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(60.52)), new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.85 }));
-    venus.setRotation(-0.00593, new THREE.Vector3(0, 1, 0));
-    venus.setRevolution(0.00512, this.filterRevolutionSize(723.3));
-    venus.setTexture('textures/venus.webp');
-    venus.setName('金星（Venus）');
-    venus.setAxisTilt(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(177.36));
-    this.planets.push(venus);
-    this.scene.add(venus.group);
-
-    // 軌道を追加
-    this.addOrbit(this.filterRevolutionSize(723.3));
-  }
-
-  /**
-   * 地球と月を追加
-   */
-  addEarth() {
-    const earth = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(63.71)), new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.85 }));
-    earth.setRotation(0.152, new THREE.Vector3(0, 1, 0));
-    earth.setRevolution(0.0032, this.filterRevolutionSize(1000), new THREE.Vector3(0, 1, 0));
-    earth.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(23.5));
-    earth.setTexture('textures/earth.webp');
-    earth.setName('地球（Earth）');
-
-    const moon = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(17.38, 'moon')), new THREE.MeshStandardMaterial({ color: 0xffffcc, roughness: 0.85, metalness: 0.85 }));
-    moon.setRotation(0.01336, new THREE.Vector3(0, 1, 0));
-    moon.setRevolution(0.152, this.filterRevolutionSize(this.filterPlanetSize(3838), 'moon'), new THREE.Vector3(0, 1, 0));
-    moon.setTexture('textures/moon.webp');
-    earth.addSatellite(moon);
-
-    this.planets.push(earth);
-    this.scene.add(earth.group);
-
-    // 軌道を追加
-    this.addOrbit(this.filterRevolutionSize(1000));
-  }
-
-  /**
-   * 火星を追加
-   */
-  addMars() {
-    const mars = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(33.90)), new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.85 }));
-    mars.setRotation(0.152, new THREE.Vector3(0, 1, 0));
-    mars.setRevolution(0.0017, this.filterRevolutionSize(1523.7));
-    mars.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(25.19));
-    mars.setTexture('textures/mars.webp');
-    mars.setName('火星（Mars）');
-    this.planets.push(mars);
-    this.scene.add(mars.group);
-
-    // 軌道を追加
-    this.addOrbit(this.filterRevolutionSize(1523.7));
-  }
-
-  /**
-   * 木星を追加
-   */
-  addJupiter() {
-    const jupiter = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(699.11)), new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.85 }));
-    jupiter.setRotation(0.3648, new THREE.Vector3(0, 1, 0));
-    jupiter.setRevolution(0.00027, this.filterRevolutionSize(5203));
-    jupiter.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(3.1));
-    jupiter.setTexture('textures/jupiter.webp');
-    jupiter.setName('木星（Jupiter）');
-    this.planets.push(jupiter);
-    this.scene.add(jupiter.group);
-
-    // 軌道を追加
-    this.addOrbit(this.filterRevolutionSize(5203));
-  }
-
-  /**
-   * 土星を追加
-   */
-  addSaturn() {
-    const saturn = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(582.32)), new THREE.MeshStandardMaterial({ color: 0xffeedd, roughness: 0.85, metalness: 0.85 }));
-    saturn.setRotation(0.3648, new THREE.Vector3(0, 1, 0));
-    saturn.setRevolution(0.0001086, this.filterRevolutionSize(9538.8));
-    saturn.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(26.7));
-    saturn.setTexture('textures/saturn.webp');
-    saturn.setName('土星（Saturn）');
-
-    const ring = new PlanetaryObject(new THREE.TorusGeometry(this.filterPlanetSize(582.32, 'ringSize'), this.filterPlanetSize(583.32,'ringWidth')), new THREE.MeshStandardMaterial({ color: 0xcc9966, opacity: 0.7, transparent: true, roughness: 0.85, metalness: 0.85 }));
-    ring.mesh.scale.set(1,1,0.1);
-    ring.mesh.castShadow = false;
-    ring.setRotation(0.01, new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(5.0)), 0, Math.cos(THREE.MathUtils.degToRad(5.0))));
-    ring.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(90));
-    ring.setTexture('textures/saturn.webp');
-
-    saturn.addSatellite(ring);
-
-    this.planets.push(saturn);
-    this.scene.add(saturn.group);
-
-    // 軌道を追加
-    this.addOrbit(this.filterRevolutionSize(9538.8));
-  }
-
-  /**
-   * 天王星を追加
-   */
-  addUranus() {
-    const uranus = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(253.62)), new THREE.MeshStandardMaterial({ color: 0x88ddff, roughness: 0.85, metalness: 0.85 } ));
-    uranus.setRotation(0.20267, new THREE.Vector3(0, 1, 0));
-    uranus.setRevolution(0.00003808, this.filterRevolutionSize(19191.4));
-    uranus.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(98));
-    uranus.setTexture('textures/uranus.webp');
-    uranus.setName('天王星（Uranus）');
-
-    const ring = new PlanetaryObject(new THREE.TorusGeometry(this.filterPlanetSize(253.62, 'ringSize'), this.filterPlanetSize(253.62,'ringWidth')), new THREE.MeshStandardMaterial({ color: 0xeeddee, opacity: 0.7, transparent: true, roughness: 0.85, metalness: 0.85 }));
-    ring.mesh.scale.set(1,1,0.1);
-    ring.mesh.castShadow = false;
-    ring.setRotation(0.01, new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(-5.0)), 0, Math.cos(THREE.MathUtils.degToRad(-5.0))));
-    ring.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(0));
-    ring.setTexture('textures/uranus.webp');
-
-    uranus.addSatellite(ring);
-
-    this.planets.push(uranus);
-    this.scene.add(uranus.group);
-
-    // 軌道を追加
-    this.addOrbit(this.filterRevolutionSize(19191.4));
-  }
-
-  /** 
-   * 海王星を追加
-   */
-  addNeptune() {
-    const neptune = new PlanetaryObject(new THREE.SphereGeometry(this.filterPlanetSize(246.22)), new THREE.MeshStandardMaterial({ color: 0x0000ff, roughness: 0.85, metalness: 0.85 }));
-    neptune.setRotation(0.228, new THREE.Vector3(0, 1, 0));
-    neptune.setRevolution(0.0000194, this.filterRevolutionSize(30061.1));
-    neptune.setAxisTilt(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(28.3));
-    neptune.setTexture('textures/neptune.webp');
-    neptune.setName('海王星（Neptune）');
-    this.planets.push(neptune);
-    this.scene.add(neptune.group);
-
-    // 軌道を追加
-    this.addOrbit(this.filterRevolutionSize(30061.1));
+    this.addOrbit(this.filterDistance(planetData.distance, planetData.id));
+    this.planets.push(planet); // 惑星を配列に追加
+    this.scene.add(planet.group); // 惑星グループをシーンに追加
   }
 
   /**
@@ -698,17 +576,25 @@ export default class SolarSystem {
     const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 3 });
     
     const starVertices = [];
-    for (let i = this.filterRevolutionSize(40000); i > 0; i--) {
-      const x = THREE.MathUtils.randFloatSpread(this.filterRevolutionSize(80000));
-      const y = THREE.MathUtils.randFloatSpread(this.filterRevolutionSize(80000));
-      const z = THREE.MathUtils.randFloatSpread(this.filterRevolutionSize(80000));
+    const maxRadius = this.filterDistance(60);
+    const count = 1000;
+
+    for (let i = 0; i < count; i++) {
+      // 体積を考慮して均一な分布になるよう半径を調整
+      const radius = maxRadius * Math.pow(Math.random(), 1/3);
+      const theta = Math.random() * Math.PI * 2;  // 方位角 (0 to 2π)
+      const phi = Math.acos(2 * Math.random() - 1);  // 天頂角 (0 to π)
+
+      // 極座標から直交座標に変換
+      const x = radius * Math.sin(phi) * Math.cos(theta);
+      const y = radius * Math.sin(phi) * Math.sin(theta);
+      const z = radius * Math.cos(phi);
+
       starVertices.push(x, y, z);
     }
 
     starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
-
     const stars = new THREE.Points(starsGeometry, starsMaterial);
-
     this.scene.add(stars);
   }
 
@@ -717,7 +603,7 @@ export default class SolarSystem {
    * @returns 背景球体
    */
   addBackgroundSphere() {
-    const backgroundSphereGeometry = new THREE.SphereGeometry(this.filterRevolutionSize(36000));
+    const backgroundSphereGeometry = new THREE.SphereGeometry(this.filterDistance(150));
     const texture = new THREE.TextureLoader().load('textures/space.webp');
     texture.minFilter = THREE.LinearMipMapLinearFilter;
     texture.generateMipmaps = true;
@@ -766,8 +652,8 @@ export default class SolarSystem {
    * @returns ヘルパー
    */
   addHelper() {
-    const axisHelper = new THREE.AxesHelper(this.filterRevolutionSize(36000));
-    const pointLightHelper = new THREE.PointLightHelper(this.lights.pointLight, this.filterPlanetSize(6960, 'sun'));
+    const axisHelper = new THREE.AxesHelper(this.filterDistance(60, 'axis'));
+    const pointLightHelper = new THREE.PointLightHelper(this.lights.pointLight, this.filterRadius(695000, 'pointLight') * 1.41421356);
 
     axisHelper.visible = false;
     pointLightHelper.visible = false;

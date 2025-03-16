@@ -133,7 +133,7 @@ export default class PlanetaryObject<T extends THREE.BufferGeometry, U extends T
     }
     // 衛星の更新
     this.satellites.forEach(satellite => {
-      satellite.update(deltaTime);
+      satellite.update(deltaTime, speed);
     });
   }
 }
