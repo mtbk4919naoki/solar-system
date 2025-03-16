@@ -419,6 +419,9 @@ export default class SolarSystem {
    */
   togglePause() {
     this.pause = !this.pause;
+    if(!this.pause) {
+      this.switchCameraMode(this.cameraMode);
+    }
   }
 
   /**
