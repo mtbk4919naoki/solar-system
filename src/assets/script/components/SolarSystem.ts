@@ -415,7 +415,7 @@ export default class SolarSystem {
    */
   togglePause() {
     this.pause = !this.pause;
-    if(!this.pause) {
+    if(!this.pause && this.currentPlanet) {
       this.switchCameraMode(this.cameraMode);
     }
   }
